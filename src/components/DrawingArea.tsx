@@ -1,7 +1,6 @@
 import Toolbox from "./Toolbox";
-import { lazy, useState } from "react";
-import { type ToolsType } from "../tools";
-import Line from "../tools/line";
+import { lazy, useRef, useState } from "react";
+import { tools, type ToolsType } from "../tools";
 const Canvas = lazy(() => import("./Canvas"));
 
 export type Point = {
@@ -19,13 +18,32 @@ export type DrawingItem = {
     data: Line;
 };
 
+function useRefState<T>(initialValue: T) {
+    const stateRef = useRef(initialValue);
+
+    const setState = (newValue: T) => {
+        if (typeof newValue === "function") {
+            stateRef.current = newValue(stateRef.current);
+        } else {
+            stateRef.current = newValue;
+        }
+    };
+
+    return [stateRef.current, setState];
+}
+
 export default function DrawingArea() {
     const [activeTool, setActiveTool] = useState<ToolsType>("line");
     const [drawingItems, setDrawingItems] = useState<DrawingItem[]>([]);
+
+
     return (
         <div className="flex flex-row">
             <Toolbox activeTool={activeTool} setActiveTool={setActiveTool} />
-            <div id="canvas-container" className="w-auto overflow-hidden cursor-crosshair bg-slate-950" />
+            <div
+                id="canvas-container"
+                className={`w-auto overflow-hidden ${tools[activeTool].cursor} bg-slate-950`}
+            />
             <Canvas
                 activeTool={activeTool}
                 // drawingItems={drawingItemsRef.current}

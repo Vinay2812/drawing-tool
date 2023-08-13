@@ -13,7 +13,9 @@ export default function Toolbox({ activeTool, setActiveTool }: Props) {
                     <button
                         key={toolName}
                         onClick={() => setActiveTool(toolName as ToolsType)}
-                        className={`text-white ${activeTool === toolName && "border-2 p-2"}`}
+                        className={`text-white p-2 cursor-pointer ${
+                            activeTool === toolName ? "bg-slate-100" : "bg-transparent"
+                        }`}
                     >
                         {tool.icon}
                     </button>

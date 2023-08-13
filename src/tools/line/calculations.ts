@@ -162,12 +162,14 @@ export function findPointParallelToLine(line: Line, distance: number) {
     const perpendicularVector = { x: -slope, y: 1 };
 
     // Calculate the length of the perpendicular vector
-    const perpendicularVectorLength = Math.sqrt(perpendicularVector.x ** 2 + perpendicularVector.y ** 2);
+    const perpendicularVectorLength = Math.sqrt(
+        perpendicularVector.x ** 2 + perpendicularVector.y ** 2,
+    );
 
     // Normalize the perpendicular vector
     const normalizedPerpendicularVector = {
         x: perpendicularVector.x / perpendicularVectorLength,
-        y: perpendicularVector.y / perpendicularVectorLength
+        y: perpendicularVector.y / perpendicularVectorLength,
     };
 
     // Calculate the new point's coordinates
@@ -226,9 +228,75 @@ export function findParallelogramFourthPoint(
 
     // Calculate the position of the fourth point
     const fourthPoint = {
-        x: vertex.x + (fourthPointDistance / 1.5) * normalizedAngleBisector.x,
-        y: vertex.y + (fourthPointDistance / 1.5) * normalizedAngleBisector.y,
+        x: vertex.x + (fourthPointDistance / 1.2) * normalizedAngleBisector.x,
+        y: vertex.y + (fourthPointDistance / 1.2) * normalizedAngleBisector.y,
     };
 
     return fourthPoint;
+}
+
+function determineOrientationByPoints(point1: Point, point2: Point) {
+    const deltaY = point2.y - point1.y;
+    const deltaX = point2.x - point1.x;
+
+    const deltaThreshold = 2;
+
+    if (Math.abs(deltaX) < deltaThreshold) {
+        return "vertical"; // Vertical or Horizontal
+    } else if (Math.abs(deltaY) < deltaThreshold) {
+        return "horizontal"; // Horizontal or Vertical
+    } else if (deltaY < 0) {
+        return "right"; // Right incline
+    } else if (deltaY > 0) {
+        return "left"; // Left incline
+    } else {
+        return "horizontal"; // Horizontal (fallback)
+    }
+}
+
+export function getLabelPosition(
+    point1: Point,
+    point2: Point,
+    gap: number = 25,
+) {
+    const midpoint = getMidpoint(point1, point2);
+    const angle = Math.atan2(point2.y - point1.y, point2.x - point1.x);
+    const orientation = determineOrientationByPoints(point1, point2);
+
+    let x = midpoint.x;
+    let y = midpoint.y;
+
+    // Calculate perpendicular distances
+    const perpendicularDistanceLeft = -gap;
+    const perpendicularDistanceRight = gap;
+    // console.log(orientation);
+
+    if (orientation === "horizontal") {
+        y += gap;
+    } else if (orientation === "left") {
+        x += perpendicularDistanceLeft * Math.cos(angle + Math.PI / 2);
+        y += perpendicularDistanceLeft * Math.sin(angle + Math.PI / 2);
+    } else if (orientation === "right") {
+        x += perpendicularDistanceRight * Math.cos(angle - Math.PI / 2);
+        y += perpendicularDistanceRight * Math.sin(angle - Math.PI / 2);
+    } else {
+        x += gap;
+    }
+
+    return { x, y };
+}
+
+export function getMousePos(event: MouseEvent, container?: HTMLElement) {
+    const pos = { x: 0, y: 0 };
+    if (container) {
+        // Get the position and size of the component on the page.
+        const holderOffset = container.getBoundingClientRect();
+        pos.x = event.pageX - holderOffset.x;
+        pos.y = event.pageY - holderOffset.y;
+    }
+    return pos;
+}
+
+export function getPointsFromLines(lines: Line[]) {
+    return lines.flatMap((line) => [line.start, line.end]);
 }
