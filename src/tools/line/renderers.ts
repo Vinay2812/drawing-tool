@@ -17,6 +17,7 @@ import {
     slope,
 } from "./calculations";
 import { GRID_UNIT, textGraphicsOptions } from "../config";
+import { areSameLines } from "../select/calculations";
 
 export function renderCircle(
     graphics: PIXI.Graphics,
@@ -130,29 +131,31 @@ export function renderAngleBetweenLines(
     angleTextGraphics?: PIXI.Text,
 ) {
     const labels = "ABCDEFGHIJKLMNOPQRSTUPWXYZ".split("");
-    let labelIdx = 0;
     for (let i = 0; i < lines.length; i++) {
         for (let j = i + 1; j < lines.length; j++) {
-            if (i === j) continue;
             let line1 = lines[i];
             let line2 = lines[j];
+            if (areSameLines(line1, line2)) continue;
             // renderPointName(line1, drawingItemRef, app);
             // renderPointName(line2, drawingItemRef, app);
             const commonPoint = getCommonPoint(line1, line2);
+            console.log("cp", commonPoint)
             if (!commonPoint) {
                 continue;
             }
-            if (isSamePoint(line1.end, commonPoint)) {
-                line1 = {
-                    start: line1.end,
-                    end: line1.start,
-                };
-            }
-            if (isSamePoint(line2.end, commonPoint)) {
-                line2 = {
-                    start: line2.end,
-                    end: line2.start,
-                };
+            const line1End = isSamePoint(commonPoint, line1.start)
+                ? line1.end
+                : line1.start;
+            const line2End = isSamePoint(commonPoint, line2.start)
+                ? line2.end
+                : line2.start;
+            line1 = {
+                start: commonPoint,
+                end: line1End,
+            };
+            line2 = {
+                start: commonPoint,
+                end: line2End,
             }
 
             const angleDegrees = getAngleBetweenLines(line1, line2);

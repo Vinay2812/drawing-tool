@@ -175,20 +175,6 @@ export default function Canvas({
     }
 
     useEffect(() => {
-        if (reset) {
-            containerRef.current!.removeChild(appRef.current!.view);
-            appRef.current = null;
-            containerRef.current!.removeEventListener(
-                "mousedown",
-                handleOnDown,
-            );
-            containerRef.current!.removeEventListener(
-                "mousemove",
-                handleOnMove,
-            );
-            containerRef.current!.removeEventListener("mouseup", handleOnUp);
-            setReset(false);
-        }
         if (!appRef.current) {
             containerRef.current = document.getElementById("canvas-container")!;
             // const { width } = containerRef.current.getBoundingClientRect();
@@ -197,7 +183,7 @@ export default function Canvas({
                 height: window.innerHeight,
                 backgroundColor: "transparent", // Background color
                 backgroundAlpha: 0,
-                resolution: window.devicePixelRatio || 1,
+                // resolution: window.devicePixelRatio || 1,
             });
             renderCanvasGrid(appRef.current);
             renderGridUnit(appRef.current);
@@ -209,16 +195,16 @@ export default function Canvas({
 
         const container = containerRef.current!;
         if (!container || !appRef.current) return;
-        container.addEventListener("mousedown", handleOnDown);
-        container.addEventListener("mousemove", handleOnMove);
-        container.addEventListener("mouseup", handleOnUp);
+        container.addEventListener("pointerdown", handleOnDown);
+        container.addEventListener("pointermove", handleOnMove);
+        container.addEventListener("pointerup", handleOnUp);
 
         return () => {
-            container.removeEventListener("mousedown", handleOnDown);
-            container.removeEventListener("mousemove", handleOnMove);
-            container.removeEventListener("mouseup", handleOnUp);
+            container.removeEventListener("pointerdown", handleOnDown);
+            container.removeEventListener("pointermove", handleOnMove);
+            container.removeEventListener("pointerup", handleOnUp);
         };
-    }, [activeTool, reset, isDrawing]);
+    }, [activeTool, isDrawing]);
 
     useEffect(() => {
         // const points = getPointsFromLines(drawingItems);

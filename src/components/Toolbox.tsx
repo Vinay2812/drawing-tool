@@ -7,7 +7,7 @@ type Props = {
 
 export default function Toolbox({ activeTool, setActiveTool }: Props) {
     return (
-        <div className="flex flex-col gap-2 p-4 h-screen w-fit bg-zinc-400">
+        <div className="flex gap-2 p-4 w-screen h-fit bg-zinc-400">
             {Object.entries(tools).map(([toolName, tool]) => {
                 return (
                     <button

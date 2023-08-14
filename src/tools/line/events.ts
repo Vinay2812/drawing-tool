@@ -15,6 +15,7 @@ import {
     renderLineWithMeasurements,
     renderNewLine,
 } from "./renderers";
+import { removeAngleGraphics } from "../select/events";
 
 export type LineOnDownProps = {
     lines: Line[];
@@ -141,14 +142,22 @@ export function onUp(e: MouseEvent, others: LineOnUpProps) {
     const updatedEnd = getClosestPoint(end, points, GRID_UNIT);
 
     renderNewLine(updatedStart, updatedEnd, setDrawingItems);
-    renderAngleBetweenLines(
-        [...lines, { start: updatedStart, end: updatedEnd }],
-        app,
-        drawingItemRef,
-        pointNumberRef,
-        graphics,
-        angleTextGraphics,
-    );
+    lines.forEach((removingLine) => {
+        removeAngleGraphics(
+            lines,
+            removingLine.start,
+            removingLine,
+            app,
+            drawingItemRef,
+        );
+        removeAngleGraphics(
+            lines,
+            removingLine.end,
+            removingLine,
+            app,
+            drawingItemRef,
+        );
+    });
     setStartPoint(null);
     setIsDrawing(false);
 }

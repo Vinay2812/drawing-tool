@@ -25,31 +25,11 @@ export function hasCommonPoint(line1: Line, line2: Line) {
 }
 
 export function getCommonPoint(line1: Line, line2: Line) {
-    const x1 = line1.start.x;
-    const y1 = line1.start.y;
-    const x2 = line1.end.x;
-    const y2 = line1.end.y;
-
-    const x3 = line2.start.x;
-    const y3 = line2.start.y;
-    const x4 = line2.end.x;
-    const y4 = line2.end.y;
-
-    const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-
-    if (denominator === 0) {
-        // Lines are parallel or coincident
-        return null;
-    }
-
-    const px =
-        ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) /
-        denominator;
-    const py =
-        ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) /
-        denominator;
-
-    return { x: px, y: py };
+    if (isSamePoint(line1.start, line2.start)) return line1.start;
+    if (isSamePoint(line1.start, line2.end)) return line1.end;
+    if (isSamePoint(line1.end, line2.end)) return line1.end;
+    if (isSamePoint(line1.end, line2.start)) return line1.end;
+    return null;
 }
 
 export function getAngleBetweenLines(line1: Line, line2: Line) {
@@ -301,8 +281,12 @@ export function getPointsFromLines(lines: Line[]) {
     return lines.flatMap((line) => [line.start, line.end]);
 }
 
-export function getPointNamePosition (point1: Point, point2: Point, gap: number) {
-    const slope = (point2.y - point1.y) / (point2.x - point1.x)
+export function getPointNamePosition(
+    point1: Point,
+    point2: Point,
+    gap: number,
+) {
+    const slope = (point2.y - point1.y) / (point2.x - point1.x);
 
     const deltaX = gap / Math.sqrt(1 + slope * slope);
     const deltaY = slope * deltaX;

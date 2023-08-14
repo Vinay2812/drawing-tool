@@ -27,7 +27,7 @@ export default function DrawingArea() {
     >({});
     const pointNumberRef = useRef<number>(0);
     return (
-        <div className="flex flex-row">
+        <div className="flex flex-col">
             <Toolbox activeTool={activeTool} setActiveTool={setActiveTool} />
             <div
                 id="canvas-container"
