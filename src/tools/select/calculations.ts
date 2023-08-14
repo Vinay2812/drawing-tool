@@ -1,4 +1,4 @@
-import { Point } from "../../components/DrawingArea";
+import { Line, Point } from "../../components/DrawingArea";
 import { isSamePoint } from "../line";
 
 export function getPointsAppearingOnce(points: Point[]): Point[] {
@@ -22,7 +22,7 @@ export function getPointsAppearingOnce(points: Point[]): Point[] {
             result.push({ x, y });
         }
     }
-    console.log("result", result);
+    console.log("solo points", result);
     return result;
 }
 
@@ -34,4 +34,13 @@ export function isPointAppearingOnce(point: Point, allPoints: Point[]) {
         }
     }
     return false;
+}
+
+export function areSameLines(line1: Line, line2: Line) {
+    return (
+        (isSamePoint(line1.start, line2.start) &&
+            isSamePoint(line1.end, line2.end)) ||
+        (isSamePoint(line1.start, line2.end) &&
+            isSamePoint(line1.end, line2.start))
+    );
 }

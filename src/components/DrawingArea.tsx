@@ -1,3 +1,4 @@
+import * as PIXI from "pixi.js";
 import Toolbox from "./Toolbox";
 import { lazy, useRef, useState } from "react";
 import { tools, type ToolsType } from "../tools";
@@ -18,25 +19,13 @@ export type DrawingItem = {
     data: Line;
 };
 
-function useRefState<T>(initialValue: T) {
-    const stateRef = useRef(initialValue);
-
-    const setState = (newValue: T) => {
-        if (typeof newValue === "function") {
-            stateRef.current = newValue(stateRef.current);
-        } else {
-            stateRef.current = newValue;
-        }
-    };
-
-    return [stateRef.current, setState];
-}
-
 export default function DrawingArea() {
     const [activeTool, setActiveTool] = useState<ToolsType>("line");
     const [drawingItems, setDrawingItems] = useState<DrawingItem[]>([]);
-
-
+    const drawingItemRef = useRef<
+        Record<string, Array<PIXI.Graphics | PIXI.Text>>
+    >({});
+    const pointNumberRef = useRef<number>(0);
     return (
         <div className="flex flex-row">
             <Toolbox activeTool={activeTool} setActiveTool={setActiveTool} />
@@ -49,6 +38,8 @@ export default function DrawingArea() {
                 // drawingItems={drawingItemsRef.current}
                 drawingItems={drawingItems}
                 setDrawingItems={setDrawingItems}
+                drawingItemRef={drawingItemRef}
+                pointNumberRef={pointNumberRef}
             />
         </div>
     );

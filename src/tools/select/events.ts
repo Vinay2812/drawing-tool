@@ -16,7 +16,7 @@ import {
     renderLineWithMeasurements,
     renderNewLine,
 } from "../line/renderers";
-import { isPointAppearingOnce } from "./calculations";
+import { areSameLines, isPointAppearingOnce } from "./calculations";
 
 export type SelectOnDownProps = {
     lines: Line[];
@@ -26,6 +26,11 @@ export type SelectOnDownProps = {
     setIsDrawing: (val: boolean) => void;
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
     drawingItems: DrawingItem[];
+    drawingItemRef: React.MutableRefObject<
+        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+    >;
+    app: PIXI.Application<HTMLCanvasElement>;
+    pointNumberRef: React.MutableRefObject<number>;
 };
 
 export type SelectOnMoveProps = {
@@ -40,6 +45,11 @@ export type SelectOnMoveProps = {
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
     setReset: React.Dispatch<React.SetStateAction<boolean>>;
     selectedPoint: Point | null;
+    drawingItemRef: React.MutableRefObject<
+        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+    >;
+    drawingItems: DrawingItem[];
+    pointNumberRef: React.MutableRefObject<number>;
 };
 
 export type SelectOnUpProps = {
@@ -55,7 +65,69 @@ export type SelectOnUpProps = {
     setIsDrawing: (val: boolean) => void;
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
     setReset: React.Dispatch<React.SetStateAction<boolean>>;
+    drawingItemRef: React.MutableRefObject<
+        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+    >;
+    setStartPoint: (point: Point | null) => void;
+    pointNumberRef: React.MutableRefObject<number>;
+    drawingItems: DrawingItem[];
 };
+
+export function removeAngleGraphics(
+    lines: Line[],
+    startPoint: Point,
+    removingLine: Line,
+    app: PIXI.Application<HTMLCanvasElement>,
+    drawingItemRef: React.MutableRefObject<
+        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+    >,
+) {
+    for (const line of lines) {
+        if (areSameLines(line, removingLine)) continue;
+        if (isSamePoint(line.start, startPoint)) {
+            const key1 = `${JSON.stringify(startPoint)}-${JSON.stringify(
+                removingLine.end,
+            )}-${JSON.stringify(line.end)}`;
+            const key2 = `${JSON.stringify(startPoint)}-${JSON.stringify(
+                line.end,
+            )}-${JSON.stringify(removingLine.end)}`;
+
+            drawingItemRef.current[key1]?.forEach((g) =>
+                app.stage.removeChild(g),
+            );
+            drawingItemRef.current[key2]?.forEach((g) =>
+                app.stage.removeChild(g),
+            );
+        } else if (isSamePoint(line.end, startPoint)) {
+            const key1 = `${JSON.stringify(startPoint)}-${JSON.stringify(
+                removingLine.end,
+            )}-${JSON.stringify(line.start)}`;
+            const key2 = `${JSON.stringify(startPoint)}-${JSON.stringify(
+                line.start,
+            )}-${JSON.stringify(removingLine.end)}`;
+
+            drawingItemRef.current[key1]?.forEach((g) =>
+                app.stage.removeChild(g),
+            );
+            drawingItemRef.current[key2]?.forEach((g) =>
+                app.stage.removeChild(g),
+            );
+        }
+    }
+}
+
+export function removeLineGraphics(
+    line: Line,
+    drawingItemRef: React.MutableRefObject<
+        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+    >,
+    app: PIXI.Application<HTMLCanvasElement>,
+) {
+    const key1 = `${JSON.stringify(line.end)}-${JSON.stringify(line.start)}`;
+    const key2 = `${JSON.stringify(line.start)}-${JSON.stringify(line.end)}`;
+    drawingItemRef.current[key1]?.forEach((g) => app.stage.removeChild(g));
+    drawingItemRef.current[key2]?.forEach((g) => app.stage.removeChild(g));
+}
 
 export function onDown(e: MouseEvent, others: SelectOnDownProps) {
     const {
@@ -65,43 +137,37 @@ export function onDown(e: MouseEvent, others: SelectOnDownProps) {
         setStartPoint,
         setIsDrawing,
         setSelectedPoint,
+        drawingItemRef,
+        app,
     } = others;
 
-    // const points = getPointsFromLines(lines);
-    // const startPoint = getMousePos(e, container);
-    // const closestPoint = getClosestPoint(startPoint, points, GRID_UNIT);
     const clickedPoint = getMousePos(e, container);
     const points = getPointsFromLines(lines);
-    const closestPoint = getClosestPoint(clickedPoint, points, 5);
-    // const closestPoint = clickedPoint;
-    console.log("drawingItems", drawingItems);
-    console.log("points", points);
-    console.log("selectedPoint", closestPoint);
+    const closestPoint = getClosestPoint(clickedPoint, points, 10);
+
     if (isPointAppearingOnce(closestPoint, points)) {
         setSelectedPoint(closestPoint);
-        const clickedLine = drawingItems.find(
+        const clickedLineItem = drawingItems.find(
             (item) =>
                 isSamePoint(item.data.start, closestPoint) ||
                 isSamePoint(item.data.end, closestPoint),
         );
-        if (clickedLine) {
+        if (clickedLineItem) {
+            const clickedLine = clickedLineItem.data;
+            // const key = `${JSON.stringify(clickedLine.start)}-${JSON.stringify(
+            //     clickedLine.end,
+            // )}`;
+            // drawingItemRef.current[key]?.forEach((g) =>
+            //     app.stage.removeChild(g),
+            // );
             setStartPoint(
-                isSamePoint(clickedLine.data.start, closestPoint)
-                    ? clickedLine.data.end
-                    : clickedLine.data.start,
+                isSamePoint(clickedLine.start, closestPoint)
+                    ? clickedLine.end
+                    : clickedLine.start,
             );
         }
-        // setDrawingItems((prev) => {
-        //     return prev.filter(
-        //         (item) =>
-        //             isSamePoint(item.data.start, closestPoint) ||
-        //             isSamePoint(item.data.end, closestPoint),
-        //     );
-        // });
         setIsDrawing(true);
     }
-
-    // setStartPoint(closestPoint);
 }
 
 export function onMove(e: MouseEvent, others: SelectOnMoveProps) {
@@ -114,37 +180,44 @@ export function onMove(e: MouseEvent, others: SelectOnMoveProps) {
         angleTextGraphics,
         textGraphics,
         graphics,
-        setDrawingItems,
-        setReset,
         selectedPoint,
+        drawingItemRef,
+        pointNumberRef,
     } = others;
     if (!startPoint || !isDrawing || !selectedPoint) return;
-    app.stage.removeChild();
-    const points = getPointsFromLines(lines);
-    // const lines = itemsRef.current.map((item) => item.data);
     const end = getMousePos(e, container);
-    const updatedEnd = getClosestPoint(end, points, GRID_UNIT / 5);
     const start = startPoint;
-    // if (isSamePoint(start, getClosestPoint(end, points, GRID_UNIT / 5))) return;
     graphics.clear();
     textGraphics.text = "";
     angleTextGraphics.text = "";
-    // renderLineWithMeasurements({ start, end }, app, graphics, textGraphics);
-    // setDrawingItems((prev) => {
-    //     return prev.filter(
-    //         (item) =>
-    //             !isSamePoint(item.data.start, startPoint) &&
-    //             !isSamePoint(item.data.end, selectedPoint),
-    //     );
-    // });
-    renderNewLine(startPoint, updatedEnd, setDrawingItems);
-    // setReset(true);
-    renderAngleBetweenLines(
-        [...lines, { start, end }],
+    const removingLine = {
+        start: start,
+        end: selectedPoint,
+    };
+
+    // removeAngleGraphics(lines, start, removingLine, app, drawingItemRef);
+    renderLineWithMeasurements(
+        { start, end },
         app,
+        drawingItemRef,
+        graphics,
+        textGraphics,
+    );
+
+    const filteredLines = lines.filter(
+        (line) => !areSameLines(line, removingLine),
+    );
+    removeAngleGraphics(lines, start, removingLine, app, drawingItemRef);
+    removeLineGraphics(removingLine, drawingItemRef, app);
+    renderAngleBetweenLines(
+        [...filteredLines, { start, end }],
+        app,
+        drawingItemRef,
+        pointNumberRef,
         graphics,
         angleTextGraphics,
     );
+
     app.stage.addChild(textGraphics);
     app.stage.addChild(graphics);
 }
@@ -163,6 +236,9 @@ export function onUp(e: MouseEvent, others: SelectOnUpProps) {
         app,
         container,
         setReset,
+        drawingItemRef,
+        setStartPoint,
+        drawingItems,
     } = others;
     if (!startPoint || !isDrawing || !selectedPoint) return;
     graphics.clear();
@@ -170,33 +246,51 @@ export function onUp(e: MouseEvent, others: SelectOnUpProps) {
     angleTextGraphics.text = "";
     const start = startPoint;
     const end = getMousePos(e, container);
+    const removingLine = {
+        start: start,
+        end: selectedPoint,
+    };
     // console.log(start, end);
+    const filteredLines = drawingItems
+        .filter((item) => !areSameLines(item.data, removingLine))
+        .reduce((prev, item) => [...prev, item.data], [] as Line[]);
+
     const points = getPointsFromLines(lines);
-    if (isSamePoint(selectedPoint, getClosestPoint(end, points, 5))) {
-        setIsDrawing(false);
-        return;
-    }
+    const filteredPoints = getPointsFromLines(filteredLines);
+    // if (isSamePoint(selectedPoint, getClosestPoint(end, points, 5))) {
+    //     setIsDrawing(false);
+    //     return;
+    // }
     // const lines = itemsRef.current.map((item) => item.data);
-    const updatedStart = getClosestPoint(start, points, 0);
-    const updatedEnd = getClosestPoint(end, points, 0);
-    if (isSamePoint(updatedStart, updatedEnd)) {
-        setIsDrawing(false);
-        return;
+    // const updatedStart = getClosestPoint(start, points, 0);
+    const updatedEnd = getClosestPoint(end, filteredPoints, GRID_UNIT / 10);
+
+    const newLine = { start, end: updatedEnd };
+
+    setStartPoint(null);
+    setIsDrawing(false);
+    removeAngleGraphics(lines, start, removingLine, app, drawingItemRef);
+    let isNewLine = true;
+    for (const line of lines) {
+        if (
+            !areSameLines(newLine, removingLine) &&
+            areSameLines(line, newLine)
+        ) {
+            isNewLine = false;
+            const pointLabelKey = JSON.stringify(start);
+            drawingItemRef.current[pointLabelKey]?.forEach((g) =>
+                app.stage.removeChild(g),
+            );
+            break;
+        }
     }
     setDrawingItems((prev) => {
-        return prev.filter(
-            (item) =>
-                !isSamePoint(item.data.start, startPoint) &&
-                !isSamePoint(item.data.end, selectedPoint),
+        const filteredLines = prev.filter(
+            (item) => !areSameLines(item.data, removingLine),
         );
+        if (isNewLine) {
+            filteredLines.push({ type: "line", data: newLine });
+        }
+        return filteredLines;
     });
-    renderNewLine(updatedStart, updatedEnd, setDrawingItems);
-    // setReset(true);
-    // renderAngleBetweenLines(
-    //     [...lines, { start: updatedStart, end: updatedEnd }],
-    //     app,
-    //     graphics,
-    //     angleTextGraphics,
-    // );
-    setIsDrawing(false);
 }

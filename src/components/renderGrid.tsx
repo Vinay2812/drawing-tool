@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { GRID_UNIT, textGraphicsOptions } from "../tools/config";
-import { renderLineWithMeasurements } from "../tools/line";
+import { getMidpoint, renderCircle } from "../tools/line";
 
 export function renderCanvasGrid(
     app: PIXI.Application<HTMLCanvasElement> | null,
@@ -61,7 +61,16 @@ export function renderGridUnit(
 
     const lineGraphics = new PIXI.Graphics();
     const textGraphics = new PIXI.Text("1 cm", textGraphicsOptions);
-    renderLineWithMeasurements(line, app, lineGraphics, textGraphics);
-    app!.stage.addChild(lineGraphics);
-    app!.stage.addChild(textGraphics);
+    const { start, end } = line;
+    lineGraphics.lineStyle(3, "blue", 1, 0.5);
+
+    lineGraphics.moveTo(start.x, start.y);
+    lineGraphics.lineTo(end.x, end.y);
+    renderCircle(lineGraphics, start, 4, "blue");
+    renderCircle(lineGraphics, end, 4, "blue");
+    const midpoint = getMidpoint(line.start, line.end);
+    textGraphics.x = midpoint.x - 15;
+    textGraphics.y = midpoint.y + 10;
+    app.stage.addChild(lineGraphics);
+    app.stage.addChild(textGraphics);
 }

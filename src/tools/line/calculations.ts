@@ -272,7 +272,7 @@ export function getLabelPosition(
     // console.log(orientation);
 
     if (orientation === "horizontal") {
-        y += gap;
+        // y += gap;
     } else if (orientation === "left") {
         x += perpendicularDistanceLeft * Math.cos(angle + Math.PI / 2);
         y += perpendicularDistanceLeft * Math.sin(angle + Math.PI / 2);
@@ -280,7 +280,7 @@ export function getLabelPosition(
         x += perpendicularDistanceRight * Math.cos(angle - Math.PI / 2);
         y += perpendicularDistanceRight * Math.sin(angle - Math.PI / 2);
     } else {
-        x += gap;
+        // x += gap;
     }
 
     return { x, y };
@@ -299,4 +299,19 @@ export function getMousePos(event: MouseEvent, container?: HTMLElement) {
 
 export function getPointsFromLines(lines: Line[]) {
     return lines.flatMap((line) => [line.start, line.end]);
+}
+
+export function getPointNamePosition (point1: Point, point2: Point, gap: number) {
+    const slope = (point2.y - point1.y) / (point2.x - point1.x)
+
+    const deltaX = gap / Math.sqrt(1 + slope * slope);
+    const deltaY = slope * deltaX;
+
+    const directionX = point2.x > point1.x ? -1 : 1;
+    const directionY = point2.y > point1.y ? -1 : 1;
+
+    const newX = point2.x + directionX * deltaX;
+    const newY = point2.y + directionY * deltaY;
+
+    return { x: newX, y: newY };
 }

@@ -1,6 +1,10 @@
 import * as PIXI from "pixi.js";
 import { GRID_UNIT } from "../config";
-import { DrawingItem, type Line, type Point } from "../../components/DrawingArea";
+import {
+    DrawingItem,
+    type Line,
+    type Point,
+} from "../../components/DrawingArea";
 import {
     getClosestPoint,
     getMousePos,
@@ -17,6 +21,10 @@ export type LineOnDownProps = {
     container: HTMLElement;
     setStartPoint: (point: Point) => void;
     setIsDrawing: (val: boolean) => void;
+    drawingItemRef: React.MutableRefObject<
+        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+    >;
+    pointNumberRef: React.MutableRefObject<number>;
 };
 
 export type LineOnMoveProps = {
@@ -28,6 +36,10 @@ export type LineOnMoveProps = {
     angleTextGraphics: PIXI.Text;
     textGraphics: PIXI.Text;
     graphics: PIXI.Graphics;
+    drawingItemRef: React.MutableRefObject<
+        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+    >;
+    pointNumberRef: React.MutableRefObject<number>;
 };
 
 export type LineOnUpProps = {
@@ -41,6 +53,10 @@ export type LineOnUpProps = {
     graphics: PIXI.Graphics;
     setIsDrawing: (val: boolean) => void;
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
+    drawingItemRef: React.MutableRefObject<
+        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+    >;
+    pointNumberRef: React.MutableRefObject<number>;
 };
 
 export function onDown(e: MouseEvent, others: LineOnDownProps) {
@@ -64,6 +80,8 @@ export function onMove(e: MouseEvent, others: LineOnMoveProps) {
         angleTextGraphics,
         textGraphics,
         graphics,
+        drawingItemRef,
+        pointNumberRef,
     } = others;
     if (!startPoint || !isDrawing) return;
     // const lines = itemsRef.current.map((item) => item.data);
@@ -72,10 +90,18 @@ export function onMove(e: MouseEvent, others: LineOnMoveProps) {
     graphics.clear();
     textGraphics.text = "";
     angleTextGraphics.text = "";
-    renderLineWithMeasurements({ start, end }, app, graphics, textGraphics);
+    renderLineWithMeasurements(
+        { start, end },
+        app,
+        drawingItemRef,
+        graphics,
+        textGraphics,
+    );
     renderAngleBetweenLines(
         [...lines, { start, end }],
         app,
+        drawingItemRef,
+        pointNumberRef,
         graphics,
         angleTextGraphics,
     );
@@ -94,10 +120,16 @@ export function onUp(e: MouseEvent, others: LineOnUpProps) {
         graphics,
         setDrawingItems,
         app,
-        container
+        container,
+        drawingItemRef,
+        setStartPoint,
+        pointNumberRef,
     } = others;
-    if (!startPoint|| !isDrawing) return;
+    if (!startPoint || !isDrawing) return;
     graphics.clear();
+    app.stage.removeChild(textGraphics);
+    app.stage.removeChild(angleTextGraphics);
+
     textGraphics.text = "";
     angleTextGraphics.text = "";
     const start = startPoint;
@@ -111,8 +143,11 @@ export function onUp(e: MouseEvent, others: LineOnUpProps) {
     renderAngleBetweenLines(
         [...lines, { start: updatedStart, end: updatedEnd }],
         app,
+        drawingItemRef,
+        pointNumberRef,
         graphics,
         angleTextGraphics,
     );
+    setStartPoint(null);
     setIsDrawing(false);
 }

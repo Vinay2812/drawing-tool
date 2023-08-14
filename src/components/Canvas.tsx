@@ -24,12 +24,18 @@ type Props = {
     activeTool: keyof typeof tools;
     drawingItems: DrawingItem[];
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
+    drawingItemRef: React.MutableRefObject<
+        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+    >;
+    pointNumberRef: React.MutableRefObject<number>;
 };
 
 export default function Canvas({
     drawingItems,
     setDrawingItems,
     activeTool,
+    drawingItemRef,
+    pointNumberRef,
 }: Props) {
     const appRef = useRef<PIXI.Application<HTMLCanvasElement> | null>(null);
     const containerRef = useRef<HTMLElement | null>(null);
@@ -63,6 +69,8 @@ export default function Canvas({
                     angleTextGraphics,
                     textGraphics,
                     graphics,
+                    drawingItemRef,
+                    pointNumberRef,
                 } as LineOnMoveProps;
             case "line-down":
                 return {
@@ -70,6 +78,8 @@ export default function Canvas({
                     container: containerRef.current!,
                     setStartPoint,
                     setIsDrawing,
+                    drawingItemRef,
+                    pointNumberRef,
                 } as LineOnDownProps;
             case "line-up":
                 return {
@@ -83,6 +93,9 @@ export default function Canvas({
                     setDrawingItems,
                     app: appRef.current!,
                     container: containerRef.current!,
+                    drawingItemRef,
+                    setStartPoint,
+                    pointNumberRef,
                 } as LineOnUpProps;
             case "select-up":
                 return {
@@ -97,7 +110,11 @@ export default function Canvas({
                     setDrawingItems,
                     app: appRef.current!,
                     container: containerRef.current!,
-                    setReset
+                    setReset,
+                    drawingItemRef,
+                    drawingItems,
+                    setStartPoint,
+                    pointNumberRef,
                 } as SelectOnUpProps;
             case "select-down":
                 return {
@@ -108,6 +125,9 @@ export default function Canvas({
                     setDrawingItems,
                     drawingItems: itemsRef.current,
                     setSelectedPoint,
+                    drawingItemRef,
+                    app: appRef.current!,
+                    pointNumberRef,
                 } as SelectOnDownProps;
             case "select-move":
                 return {
@@ -119,6 +139,10 @@ export default function Canvas({
                     angleTextGraphics,
                     textGraphics,
                     graphics,
+                    drawingItemRef,
+                    selectedPoint: selectedPoint.current,
+                    setDrawingItems,
+                    setReset,
                 } as SelectOnMoveProps;
             default:
                 return {};
@@ -127,26 +151,41 @@ export default function Canvas({
 
     function handleOnMove(e: MouseEvent) {
         const props = getProps(activeTool, "move");
+        // if (activeTool === "select") {
+        //     return onMove(e);
+        // }
         return tools[activeTool].events.onMove(e, props);
     }
 
     function handleOnDown(e: MouseEvent) {
         const props = getProps(activeTool, "down");
+        // if (activeTool === "select") {
+        //     return onDown(e);
+        // }
         return tools[activeTool].events.onDown(e, props);
         // console.log(getMousePos(e, containerRef.current!))
     }
 
     function handleOnUp(e: MouseEvent) {
         const props = getProps(activeTool, "up");
+        // if (activeTool === "select") {
+        //     return onUp(e);
+        // }
         return tools[activeTool].events.onUp(e, props);
     }
 
     useEffect(() => {
         if (reset) {
-            containerRef.current!.removeChild(appRef.current!.view)
+            containerRef.current!.removeChild(appRef.current!.view);
             appRef.current = null;
-            containerRef.current!.removeEventListener("mousedown", handleOnDown);
-            containerRef.current!.removeEventListener("mousemove", handleOnMove);
+            containerRef.current!.removeEventListener(
+                "mousedown",
+                handleOnDown,
+            );
+            containerRef.current!.removeEventListener(
+                "mousemove",
+                handleOnMove,
+            );
             containerRef.current!.removeEventListener("mouseup", handleOnUp);
             setReset(false);
         }
@@ -185,13 +224,19 @@ export default function Canvas({
         // const points = getPointsFromLines(drawingItems);
         itemsRef.current = drawingItems;
         drawingItems.forEach((item) => {
-            renderLineWithMeasurements(item.data, appRef.current!);
+            const renderer = tools[item.type].renderer;
+            renderer(
+                item.data,
+                appRef.current!,
+                drawingItemRef,
+            );
             renderAngleBetweenLines(
                 drawingItems.map((item) => item.data),
                 appRef.current!,
+                drawingItemRef,
+                pointNumberRef,
             );
         });
-        // setReset(true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [drawingItems, activeTool]);
     return <div></div>;
