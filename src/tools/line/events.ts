@@ -57,6 +57,7 @@ export type LineOnUpProps = {
         Record<string, (PIXI.Graphics | PIXI.Text)[]>
     >;
     pointNumberRef: React.MutableRefObject<number>;
+    setStartPoint: (point: Point | null) => void;
 };
 
 export function onDown(e: MouseEvent, others: LineOnDownProps) {

@@ -14,7 +14,6 @@ import {
 import {
     renderAngleBetweenLines,
     renderLineWithMeasurements,
-    renderNewLine,
 } from "../line/renderers";
 import { areSameLines, isPointAppearingOnce } from "./calculations";
 
