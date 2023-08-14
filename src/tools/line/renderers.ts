@@ -42,14 +42,15 @@ export function renderLine(graphics: PIXI.Graphics, line: Line, color: string) {
 export function renderDistanceOnLine(textGraphics: PIXI.Text, line: Line) {
     const { start, end } = line;
     const distance = getDistance(start, end);
-    const s = slope(line.start, line.end);
-    let p1 = start;
-    let p2 = end;
-    if (s < 0) {
-        p1 = end;
-        p2 = start;
-    }
-    const p = getLabelPosition(p1, p2, GRID_UNIT / 3.5);
+    const p1 = start;
+    const p2 = end;
+    const s = slope(p1, p2);
+    // if (s < 0) {
+    //     p1 = end;
+    //     p2 = start;
+    //     s = slope(p1, p2)
+    // }
+    const p = getLabelPosition(p1, p2, GRID_UNIT / 3);
     const angle = Math.atan(s);
     textGraphics.rotation = angle;
     // renderCircle(graphics, p, 3, "blue");
