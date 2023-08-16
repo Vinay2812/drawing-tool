@@ -16,6 +16,7 @@ import {
     renderNewLine,
 } from "./renderers";
 import { removeAngleGraphics } from "../select/events";
+import { SmoothGraphics } from "@pixi/graphics-smooth";
 
 export type LineOnDownProps = {
     lines: Line[];
@@ -23,7 +24,7 @@ export type LineOnDownProps = {
     setStartPoint: (point: Point) => void;
     setIsDrawing: (val: boolean) => void;
     drawingItemRef: React.MutableRefObject<
-        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+        Record<string, (SmoothGraphics | PIXI.Text)[]>
     >;
     pointNumberRef: React.MutableRefObject<number>;
 };
@@ -36,9 +37,9 @@ export type LineOnMoveProps = {
     app: PIXI.Application<HTMLCanvasElement>;
     angleTextGraphics: PIXI.Text;
     textGraphics: PIXI.Text;
-    graphics: PIXI.Graphics;
+    graphics: SmoothGraphics;
     drawingItemRef: React.MutableRefObject<
-        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+        Record<string, (SmoothGraphics | PIXI.Text)[]>
     >;
     pointNumberRef: React.MutableRefObject<number>;
 };
@@ -51,11 +52,11 @@ export type LineOnUpProps = {
     app: PIXI.Application<HTMLCanvasElement>;
     angleTextGraphics: PIXI.Text;
     textGraphics: PIXI.Text;
-    graphics: PIXI.Graphics;
+    graphics: SmoothGraphics;
     setIsDrawing: (val: boolean) => void;
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
     drawingItemRef: React.MutableRefObject<
-        Record<string, (PIXI.Graphics | PIXI.Text)[]>
+        Record<string, (SmoothGraphics | PIXI.Text)[]>
     >;
     pointNumberRef: React.MutableRefObject<number>;
     setStartPoint: (point: Point | null) => void;
@@ -129,8 +130,6 @@ export function onUp(e: MouseEvent, others: LineOnUpProps) {
     } = others;
     if (!startPoint || !isDrawing) return;
     graphics.clear();
-    app.stage.removeChild(textGraphics);
-    app.stage.removeChild(angleTextGraphics);
 
     textGraphics.text = "";
     angleTextGraphics.text = "";
@@ -142,22 +141,16 @@ export function onUp(e: MouseEvent, others: LineOnUpProps) {
     const updatedEnd = getClosestPoint(end, points, GRID_UNIT);
 
     renderNewLine(updatedStart, updatedEnd, setDrawingItems);
-    lines.forEach((removingLine) => {
-        removeAngleGraphics(
-            lines,
-            removingLine.start,
-            removingLine,
-            app,
-            drawingItemRef,
-        );
-        removeAngleGraphics(
-            lines,
-            removingLine.end,
-            removingLine,
-            app,
-            drawingItemRef,
-        );
-    });
+    // renderAngleBetweenLines(
+    //     [...lines, { start: updatedStart, end: updatedEnd }],
+    //     app,
+    //     drawingItemRef,
+    //     pointNumberRef,
+    //     graphics,
+    //     angleTextGraphics,
+    // );
+    // app.stage.addChild(textGraphics);
+    // app.stage.addChild(graphics);
     setStartPoint(null);
     setIsDrawing(false);
 }

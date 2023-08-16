@@ -1,4 +1,5 @@
 import type { Point, Line } from "../../components/DrawingArea";
+import { GRID_UNIT } from "../config";
 
 export function isSamePoint(start: Point, end: Point) {
     return start.x === end.x && start.y === end.y;
@@ -26,7 +27,7 @@ export function hasCommonPoint(line1: Line, line2: Line) {
 
 export function getCommonPoint(line1: Line, line2: Line) {
     if (isSamePoint(line1.start, line2.start)) return line1.start;
-    if (isSamePoint(line1.start, line2.end)) return line1.end;
+    if (isSamePoint(line1.start, line2.end)) return line1.start;
     if (isSamePoint(line1.end, line2.end)) return line1.end;
     if (isSamePoint(line1.end, line2.start)) return line1.end;
     return null;
@@ -208,8 +209,8 @@ export function findParallelogramFourthPoint(
 
     // Calculate the position of the fourth point
     const fourthPoint = {
-        x: vertex.x + (fourthPointDistance / 1.2) * normalizedAngleBisector.x,
-        y: vertex.y + (fourthPointDistance / 1.2) * normalizedAngleBisector.y,
+        x: vertex.x + fourthPointDistance * normalizedAngleBisector.x,
+        y: vertex.y + fourthPointDistance * normalizedAngleBisector.y,
     };
 
     return fourthPoint;
@@ -298,4 +299,89 @@ export function getPointNamePosition(
     const newY = point2.y + directionY * deltaY;
 
     return { x: newX, y: newY };
+}
+
+function getDirectionVector(point1, point2) {
+    const dx = point2.x - point1.x;
+    const dy = point2.y - point1.y;
+    const magnitude = Math.sqrt(dx * dx + dy * dy);
+    return { x: dx / magnitude, y: dy / magnitude };
+}
+
+// Function to calculate the perpendicular vector
+function getPerpendicularVector(vector) {
+    return { x: -vector.y, y: vector.x };
+}
+
+// Function to calculate the center at a perpendicular distance from a point
+function getCenterAtDistance(point, perpendicularVector, distance) {
+    return {
+        x: point.x + perpendicularVector.x * distance,
+        y: point.y + perpendicularVector.y * distance,
+    };
+}
+
+// Function to check if a point lies inside a triangle
+function isInsideTriangle(p, a, b, c) {
+    function sign(p1, p2, p3) {
+        return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+    }
+
+    const d1 = sign(p, a, b);
+    const d2 = sign(p, b, c);
+    const d3 = sign(p, c, a);
+
+    const hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
+    const hasPos = d1 > 0 || d2 > 0 || d3 > 0;
+
+    return !(hasNeg && hasPos);
+}
+
+// Function to calculate centers of two lines at a perpendicular distance of 10 units
+export function getCentersWithLines(line1, line2) {
+    const sharedPoint = line1.start; // Assuming shared point is the start of line 1
+
+    const line1Direction = getDirectionVector(line1.start, line1.end);
+    const line2Direction = getDirectionVector(line2.start, line2.end);
+
+    const line1Perpendicular = getPerpendicularVector(line1Direction);
+    const line2Perpendicular = getPerpendicularVector(line2Direction);
+
+    const line1Midpoint = {
+        x: (line1.start.x + line1.end.x) / 2,
+        y: (line1.start.y + line1.end.y) / 2,
+    };
+    const line2Midpoint = {
+        x: (line2.start.x + line2.end.x) / 2,
+        y: (line2.start.y + line2.end.y) / 2,
+    };
+
+    const center1 = getCenterAtDistance(sharedPoint, line1Perpendicular, 10);
+    const center2 = getCenterAtDistance(sharedPoint, line2Perpendicular, 10);
+
+    const trianglePoint1 = sharedPoint;
+    const trianglePoint2 = line1Midpoint;
+    const trianglePoint3 = line2Midpoint;
+
+    const areCentersInsideTriangle =
+        isInsideTriangle(
+            center1,
+            trianglePoint1,
+            trianglePoint2,
+            trianglePoint3,
+        ) ||
+        isInsideTriangle(
+            center2,
+            trianglePoint1,
+            trianglePoint2,
+            trianglePoint3,
+        );
+
+    return {
+        center1: center1,
+        center2: center2,
+        insideTriangle: !areCentersInsideTriangle,
+        line1: line1,
+        line2: line2,
+    };
 }

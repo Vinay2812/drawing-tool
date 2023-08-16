@@ -2,6 +2,7 @@ import * as PIXI from "pixi.js";
 import Toolbox from "./Toolbox";
 import { lazy, useRef, useState } from "react";
 import { tools, type ToolsType } from "../tools";
+import { SmoothGraphics } from "@pixi/graphics-smooth";
 const Canvas = lazy(() => import("./Canvas"));
 
 export type Point = {
@@ -20,18 +21,28 @@ export type DrawingItem = {
 };
 
 export default function DrawingArea() {
+    const appRef = useRef<PIXI.Application<HTMLCanvasElement> | null>(null);
     const [activeTool, setActiveTool] = useState<ToolsType>("line");
     const [drawingItems, setDrawingItems] = useState<DrawingItem[]>([]);
     const drawingItemRef = useRef<
-        Record<string, Array<PIXI.Graphics | PIXI.Text>>
+        Record<string, Array<SmoothGraphics | PIXI.Text>>
     >({});
     const pointNumberRef = useRef<number>(0);
     return (
-        <div className="flex flex-col">
-            <Toolbox activeTool={activeTool} setActiveTool={setActiveTool} />
+        <div className="flex flex-col overflow-hidden">
+            <Toolbox
+                activeTool={activeTool}
+                setActiveTool={setActiveTool}
+                setDrawingItems={setDrawingItems}
+                drawingItemRef={drawingItemRef}
+                pointNumberRef={pointNumberRef}
+                appRef={appRef}
+            />
             <div
                 id="canvas-container"
-                className={`w-auto overflow-hidden ${tools[activeTool].cursor} bg-slate-950`}
+                className={`w-auto overflow-hidden ${
+                    tools[activeTool].cursor ?? "cursor-pointer"
+                } bg-slate-950`}
             />
             <Canvas
                 activeTool={activeTool}
@@ -40,6 +51,7 @@ export default function DrawingArea() {
                 setDrawingItems={setDrawingItems}
                 drawingItemRef={drawingItemRef}
                 pointNumberRef={pointNumberRef}
+                appRef={appRef}
             />
         </div>
     );
