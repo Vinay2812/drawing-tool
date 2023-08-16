@@ -1,7 +1,12 @@
 import * as PIXI from "pixi.js";
-import { GRID_UNIT, LINE_WIDTH, textGraphicsOptions } from "../tools/config";
-import { getMidpoint, renderCircle, renderLineWithMeasurements } from "../tools/line";
+import {
+    GRID_UNIT,
+    LINE_WIDTH,
+    textGraphicsOptions,
+} from "../tools/utils/config";
+import { getMidpoint } from "../tools/utils/calculations";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
+import { renderCircle } from "../tools/line";
 
 export function renderCanvasGrid(
     app: PIXI.Application<HTMLCanvasElement> | null,
@@ -47,7 +52,6 @@ export function renderCanvasGrid(
 
 export function renderGridUnit(
     app: PIXI.Application<HTMLCanvasElement> | null,
-    drawingItemRef
 ) {
     if (!app) return;
     const line = {
@@ -64,16 +68,15 @@ export function renderGridUnit(
     const lineGraphics = new SmoothGraphics();
     const textGraphics = new PIXI.Text("1 cm", textGraphicsOptions);
     const { start, end } = line;
-    renderLineWithMeasurements(line, app, drawingItemRef, lineGraphics, textGraphics)
-    // lineGraphics.lineStyle(LINE_WIDTH, "blue", 1);
+    lineGraphics.lineStyle(LINE_WIDTH, "blue", 1);
 
-    // lineGraphics.moveTo(start.x, start.y);
-    // lineGraphics.lineTo(end.x, end.y);
-    // renderCircle(lineGraphics, start, 4, "blue");
-    // renderCircle(lineGraphics, end, 4, "blue");
-    // const midpoint = getMidpoint(line.start, line.end);
-    // textGraphics.x = midpoint.x - 15;
-    // textGraphics.y = midpoint.y + 10;
+    lineGraphics.moveTo(start.x, start.y);
+    lineGraphics.lineTo(end.x, end.y);
+    renderCircle(lineGraphics, start, 4, "blue");
+    renderCircle(lineGraphics, end, 4, "blue");
+    const midpoint = getMidpoint(line.start, line.end);
+    textGraphics.x = midpoint.x - 15;
+    textGraphics.y = midpoint.y + 10;
     app.stage.addChild(lineGraphics);
     app.stage.addChild(textGraphics);
 }

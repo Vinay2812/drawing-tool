@@ -24,17 +24,17 @@ export default function DrawingArea() {
     const appRef = useRef<PIXI.Application<HTMLCanvasElement> | null>(null);
     const [activeTool, setActiveTool] = useState<ToolsType>("line");
     const [drawingItems, setDrawingItems] = useState<DrawingItem[]>([]);
-    const drawingItemRef = useRef<
+    const graphicsStoreRef = useRef<
         Record<string, Array<SmoothGraphics | PIXI.Text>>
     >({});
     const pointNumberRef = useRef<number>(0);
     return (
-        <div className="flex flex-col overflow-hidden">
+        <div className="flex flex-col !overflow-hidden">
             <Toolbox
                 activeTool={activeTool}
                 setActiveTool={setActiveTool}
                 setDrawingItems={setDrawingItems}
-                drawingItemRef={drawingItemRef}
+                graphicsStoreRef={graphicsStoreRef}
                 pointNumberRef={pointNumberRef}
                 appRef={appRef}
             />
@@ -49,7 +49,7 @@ export default function DrawingArea() {
                 // drawingItems={drawingItemsRef.current}
                 drawingItems={drawingItems}
                 setDrawingItems={setDrawingItems}
-                drawingItemRef={drawingItemRef}
+                graphicsStoreRef={graphicsStoreRef}
                 pointNumberRef={pointNumberRef}
                 appRef={appRef}
             />

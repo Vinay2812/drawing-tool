@@ -7,24 +7,26 @@ type Props = {
     activeTool: ToolsType;
     setActiveTool: React.Dispatch<React.SetStateAction<ToolsType>>;
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
-    drawingItemRef: React.MutableRefObject<
+    graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >;
     pointNumberRef: React.MutableRefObject<number>;
-    appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>
+    appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>;
 };
 
 export default function Toolbox(props: Props) {
     return (
-        <div className="flex gap-2 p-4 w-screen h-fit bg-zinc-400">
+        <div className="flex gap-2 px-4 py-2 w-screen h-fit bg-zinc-300">
             {Object.entries(tools).map(([toolName, tool]) => {
                 return (
                     <button
                         key={toolName}
-                        onClick={() => tools[toolName as ToolsType].onClick(props)}
+                        onClick={() =>
+                            tools[toolName as ToolsType].onClick(props)
+                        }
                         className={`text-white p-2 cursor-pointer ${
                             props.activeTool === toolName
-                                ? "bg-slate-100"
+                                ? "bg-white"
                                 : "bg-transparent"
                         }`}
                     >

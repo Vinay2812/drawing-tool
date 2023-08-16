@@ -15,9 +15,9 @@ import {
     isSamePoint,
     roundupNumber,
     slope,
-} from "./calculations";
-import { GRID_UNIT, LINE_WIDTH, textGraphicsOptions } from "../config";
-import { areSameLines } from "../select/calculations";
+    areSameLines,
+} from "../utils/calculations";
+import { GRID_UNIT, LINE_WIDTH, textGraphicsOptions } from "../utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 
 export function renderCircle(
@@ -50,16 +50,19 @@ export function renderDistanceOnLine(textGraphics: PIXI.Text, line: Line) {
     const distance = getDistance(start, end);
     textGraphics.text = `${roundupNumber(distance / GRID_UNIT)} cm`;
     // const textWidth =
-    const p1 = start;
-    const p2 = end;
+    let p1 = start;
+    let p2 = end;
+    let gap = GRID_UNIT / 3.5 + LINE_WIDTH * 1.2;
+
+    if ((p2.x < p1.x && p2.y < p1.y) || (p2.x < p1.x && p2.y > p1.y)) {
+        p1 = end;
+        p2 = start;
+        gap /= 1.2;
+    }
     const s = slope(p1, p2);
-    // if (s < 0) {
-    //     p1 = end;
-    //     p2 = start;
-    //     s = slope(p1, p2)
-    // }
-    const p = getLabelPosition(p1, p2, (GRID_UNIT + LINE_WIDTH) / 3);
     const angle = Math.atan(s);
+    // const gap = 10;
+    const p = getLabelPosition(p1, p2, gap);
     textGraphics.rotation = angle;
     // renderCircle(graphics, p, 3, "blue");
     textGraphics.x = p.x;
@@ -69,7 +72,7 @@ export function renderDistanceOnLine(textGraphics: PIXI.Text, line: Line) {
 export function renderLineWithMeasurements(
     line: Line,
     app: PIXI.Application<HTMLCanvasElement>,
-    drawingItemRef: React.MutableRefObject<
+    graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
     lineGraphics?: SmoothGraphics,
@@ -79,18 +82,18 @@ export function renderLineWithMeasurements(
     if (!lineGraphics) lineGraphics = new SmoothGraphics();
     if (!textGraphics) textGraphics = new PIXI.Text("", textGraphicsOptions);
     const key = `${JSON.stringify(start)}-${JSON.stringify(end)}`;
-    if (!drawingItemRef.current[key]) {
+    if (!graphicsStoreRef.current[key]) {
         {
-            drawingItemRef.current[key] = [];
+            graphicsStoreRef.current[key] = [];
         }
     } else {
-        drawingItemRef.current[key].forEach((item) => {
+        graphicsStoreRef.current[key].forEach((item) => {
             app.stage.removeChild(item);
         });
-        drawingItemRef.current[key] = [];
+        graphicsStoreRef.current[key] = [];
     }
-    drawingItemRef.current[key].push(lineGraphics);
-    drawingItemRef.current[key].push(textGraphics);
+    graphicsStoreRef.current[key].push(lineGraphics);
+    graphicsStoreRef.current[key].push(textGraphics);
     renderLine(lineGraphics, { start, end }, "red");
     // const textGraphics = new PIXI.Text("", textGraphicsOptions);
     renderDistanceOnLine(textGraphics, { start, end });
@@ -100,23 +103,20 @@ export function renderLineWithMeasurements(
 
 export function renderPointName(
     line: Line,
-    drawingItemRef: React.MutableRefObject<
+    graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
     app: PIXI.Application<HTMLCanvasElement>,
 ) {
     const pointLabelKey = `point-${JSON.stringify(line.start)}`;
     let pointLabelGraphics = new PIXI.Text("A", textGraphicsOptions);
-    if (drawingItemRef.current[pointLabelKey]) {
-        pointLabelGraphics = drawingItemRef.current[
+    if (graphicsStoreRef.current[pointLabelKey]) {
+        pointLabelGraphics = graphicsStoreRef.current[
             pointLabelKey
         ][0] as PIXI.Text;
         app.stage.removeChild(pointLabelGraphics);
     } else {
-        // console.log(pointLabelKey, labelIdx, labels[labelIdx]);
-        drawingItemRef.current[pointLabelKey] = [pointLabelGraphics];
-        // pointLabelGraphics.text = labels[labelIdx];
-        // labelIdx = labelIdx + 1;
+        graphicsStoreRef.current[pointLabelKey] = [pointLabelGraphics];
     }
 
     const p3 = getPointNamePosition(line.end, line.start, 10);
@@ -126,130 +126,156 @@ export function renderPointName(
     app.stage.addChild(pointLabelGraphics);
 }
 
+function renderPointLabel(
+    line1: Line,
+    line2: Line,
+    commonPoint: Point,
+    app: PIXI.Application<HTMLCanvasElement>,
+    graphicsStoreRef: React.MutableRefObject<
+        Record<string, (SmoothGraphics | PIXI.Text)[]>
+    >,
+    pointNumberRef: React.MutableRefObject<number>,
+) {
+    const labels = "ABCDEFGHIJKLMNOPQRSTUPWXYZ".split("");
+    const pointLabelKey = JSON.stringify(commonPoint);
+    let pointLabelGraphics = new PIXI.Text("", textGraphicsOptions);
+    if (graphicsStoreRef.current[pointLabelKey]) {
+        pointLabelGraphics = graphicsStoreRef.current[
+            pointLabelKey
+        ][0] as PIXI.Text;
+        app.stage.removeChild(pointLabelGraphics);
+    } else {
+        // console.log(pointLabelKey, labelIdx, labels[labelIdx]);
+        graphicsStoreRef.current[pointLabelKey] = [pointLabelGraphics];
+        pointLabelGraphics.text = labels[pointNumberRef.current];
+        pointNumberRef.current = pointNumberRef.current + 1;
+    }
+    const p1 = findPointAtDistance(line1, -20);
+    const p2 = findPointAtDistance(line2, -20);
+    const p3 = findParallelogramFourthPoint([commonPoint, p1, p2], 0, 1.2)!;
+    pointLabelGraphics.x = p3.x - 10;
+    pointLabelGraphics.y = p3.y - 10;
+    app.stage.addChild(pointLabelGraphics);
+}
+
+function renderAngleGraphics(
+    line1: Line,
+    line2: Line,
+    commonPoint: Point,
+    angleDegrees: number,
+    graphics: SmoothGraphics,
+    angleTextGraphics: PIXI.Text,
+) {
+    const line1Length = getDistance(line1.start, line1.end);
+    const line2Length = getDistance(line2.start, line2.end);
+
+    const minLength = Math.min(line1Length, line2Length);
+
+    const gap = Math.min(minLength, GRID_UNIT) * 0.4;
+    const controlPointFactor = 1.5;
+
+    const arcStartPoint = findPointAtDistance(line1, gap);
+    const arcEndPoint = findPointAtDistance(line2, gap);
+
+    const controlPoint = findParallelogramFourthPoint(
+        [commonPoint, arcStartPoint, arcEndPoint],
+        0,
+        controlPointFactor,
+    )!;
+    if (!controlPoint) return;
+
+    // Create a Graphics object to draw the arc
+    graphics.lineStyle(3, "white", 1, 0.5);
+
+    // Draw the arc
+    graphics.moveTo(arcStartPoint.x, arcStartPoint.y);
+    graphics.quadraticCurveTo(
+        controlPoint.x,
+        controlPoint.y,
+        arcEndPoint.x,
+        arcEndPoint.y,
+    );
+    const angleFourthPoint = findParallelogramFourthPoint(
+        [commonPoint, arcStartPoint, arcEndPoint],
+        0,
+        controlPointFactor + 0.35,
+    )!;
+    angleTextGraphics.x = angleFourthPoint.x - 10;
+    angleTextGraphics.y = angleFourthPoint.y - 10;
+    angleTextGraphics.text = `${roundupNumber(angleDegrees, 0)}°`;
+}
+
 export function renderAngleBetweenLines(
     lines: Line[],
     app: PIXI.Application<HTMLCanvasElement>,
-    drawingItemRef: React.MutableRefObject<
+    graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
     pointNumberRef: React.MutableRefObject<number>,
     graphics?: SmoothGraphics,
     angleTextGraphics?: PIXI.Text,
 ) {
-    const labels = "ABCDEFGHIJKLMNOPQRSTUPWXYZ".split("");
     for (let i = 0; i < lines.length; i++) {
         for (let j = i + 1; j < lines.length; j++) {
             let line1 = lines[i];
             let line2 = lines[j];
             if (areSameLines(line1, line2)) {
-                console.log(line1, line2);
                 continue;
             }
             const commonPoint = getCommonPoint(line1, line2);
             if (!commonPoint) {
                 continue;
             }
-            const line1End = isSamePoint(commonPoint, line1.start)
-                ? line1.end
-                : line1.start;
-            const line2End = isSamePoint(commonPoint, line2.start)
-                ? line2.end
-                : line2.start;
+
             line1 = {
                 start: commonPoint,
-                end: line1End,
+                end: isSamePoint(commonPoint, line1.start)
+                    ? line1.end
+                    : line1.start,
             };
             line2 = {
                 start: commonPoint,
-                end: line2End,
+                end: isSamePoint(commonPoint, line2.start)
+                    ? line2.end
+                    : line2.start,
             };
 
             const angleDegrees = getAngleBetweenLines(line1, line2);
             if (angleDegrees === -1) {
                 continue;
             }
-            // console.log(`line${i + 1}-line${j + 1}-${angleDegrees}`);
+            const g = graphics ?? new SmoothGraphics();
+            const atg =
+                angleTextGraphics ?? new PIXI.Text("", textGraphicsOptions);
+
+            renderAngleGraphics(
+                line1,
+                line2,
+                commonPoint,
+                angleDegrees,
+                g,
+                atg,
+            );
+
+            renderPointLabel(
+                line1,
+                line2,
+                commonPoint,
+                app,
+                graphicsStoreRef,
+                pointNumberRef,
+            );
+            app.stage.addChild(g);
+            app.stage.addChild(atg);
+
             const key = `${JSON.stringify(commonPoint)}-${JSON.stringify(
                 line1.end,
             )}-${JSON.stringify(line2.end)}`;
-            const line1Length = getDistance(line1.start, line1.end);
-            const line2Length = getDistance(line2.start, line2.end);
-            const gap = Math.min(
-                Math.min(line1Length, line2Length) / 4,
-                (GRID_UNIT * GRID_UNIT * 0.5) / angleDegrees,
-            );
-
-            const arcStartPoint = findPointAtDistance(line1, gap);
-            const arcEndPoint = findPointAtDistance(line2, gap);
-            let g = graphics;
-            if (!g) g = new SmoothGraphics();
-            // const controlPoint = getMidpoint(arcStartPoint, arcEndPoint);
-            const controlPoint = findParallelogramFourthPoint(
-                [commonPoint, arcStartPoint, arcEndPoint],
-                0,
-            );
-            if (!controlPoint) continue;
-            // renderCircle(graphics, controlPoint, 6, "blue");
-
-            // Create a Graphics object to draw the arc
-            g.lineStyle(3, "white", 1, 1);
-
-            // Draw the arc
-            g.moveTo(arcStartPoint.x, arcStartPoint.y);
-            g.quadraticCurveTo(
-                controlPoint.x,
-                controlPoint.y,
-                arcEndPoint.x,
-                arcEndPoint.y,
-            );
-
-            let atg = angleTextGraphics;
-            const r = 1
-            const angleTextStartPoints = {
-                x: arcStartPoint.x * r,
-                y: arcStartPoint.y * r,
-            };
-            const angleTextEndPoints = {
-                x: arcEndPoint.x * r,
-                y: arcEndPoint.y * r,
-            };
-            const angleFourthPoint = findParallelogramFourthPoint(
-                [commonPoint, angleTextStartPoints, angleTextEndPoints],
-                0,
-            )!;
-            if (!atg) atg = new PIXI.Text("", textGraphicsOptions);
-            atg.x = angleFourthPoint.x - 10;
-            atg.y = angleFourthPoint.y - 10;
-            atg.text = `${roundupNumber(angleDegrees, 0)}°`;
-
-            const pointLabelKey = JSON.stringify(commonPoint);
-            let pointLabelGraphics = new PIXI.Text("", textGraphicsOptions);
-            if (drawingItemRef.current[pointLabelKey]) {
-                pointLabelGraphics = drawingItemRef.current[
-                    pointLabelKey
-                ][0] as PIXI.Text;
-                app.stage.removeChild(pointLabelGraphics);
-            } else {
-                // console.log(pointLabelKey, labelIdx, labels[labelIdx]);
-                drawingItemRef.current[pointLabelKey] = [pointLabelGraphics];
-                pointLabelGraphics.text = labels[pointNumberRef.current];
-                pointNumberRef.current = pointNumberRef.current + 1;
+            if (!graphicsStoreRef.current[key]) {
+                graphicsStoreRef.current[key] = [];
             }
-            const p1 = findPointAtDistance(line1, -20);
-            const p2 = findPointAtDistance(line2, -20);
-            const p3 = findParallelogramFourthPoint([commonPoint, p1, p2], 0)!;
-            pointLabelGraphics.x = p3.x - 10;
-            pointLabelGraphics.y = p3.y - 10;
-
-            app.stage.addChild(pointLabelGraphics);
-            // renderPointName(line1, drawingItemRef, app);
-            app.stage.addChild(g);
-            app.stage.addChild(atg);
-            if (!drawingItemRef.current[key]) {
-                drawingItemRef.current[key] = [];
-            }
-            drawingItemRef.current[key].push(g);
-            drawingItemRef.current[key].push(atg);
+            graphicsStoreRef.current[key].push(g);
+            graphicsStoreRef.current[key].push(atg);
         }
     }
 }

@@ -2,16 +2,17 @@ import * as PIXI from "pixi.js";
 import { ToolsType, tools } from "../tools";
 import { DrawingItem, Point } from "./DrawingArea";
 import { useEffect, useRef } from "react";
-import { renderAngleBetweenLines } from "../tools/line/renderers";
 import { renderCanvasGrid, renderGridUnit } from "./renderGrid";
-import { textGraphicsOptions } from "../tools/config";
+import { textGraphicsOptions } from "../tools/utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
+import { renderAngleBetweenLines } from "../tools/line";
+import { PointerEventsProps } from "../tools/line/events";
 
 type Props = {
     activeTool: ToolsType;
     drawingItems: DrawingItem[];
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
-    drawingItemRef: React.MutableRefObject<
+    graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >;
     pointNumberRef: React.MutableRefObject<number>;
@@ -22,7 +23,7 @@ export default function Canvas({
     drawingItems,
     setDrawingItems,
     activeTool,
-    drawingItemRef,
+    graphicsStoreRef,
     pointNumberRef,
     appRef,
 }: Props) {
@@ -41,7 +42,7 @@ export default function Canvas({
     const itemsRef = useRef(drawingItems);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getProps = (): any => {
+    const getProps = (): PointerEventsProps => {
         return {
             startPoint: startPoint.current,
             isDrawing: isDrawing.current,
@@ -51,14 +52,14 @@ export default function Canvas({
             angleTextGraphics,
             textGraphics,
             graphics,
-            drawingItemRef,
+            graphicsStoreRef,
             selectedPoint: selectedPoint.current,
             setDrawingItems,
             pointNumberRef,
             setStartPoint,
             setSelectedPoint,
             setIsDrawing,
-            drawingItems
+            drawingItems,
         };
     };
 
@@ -79,8 +80,10 @@ export default function Canvas({
 
     useEffect(() => {
         if (!appRef.current) {
-            containerRef.current = document.getElementById("canvas-container")!;
-            // const { width } = containerRef.current.getBoundingClientRect();
+            containerRef.current = document.getElementById("canvas-container");
+            if (!containerRef.current) {
+                throw Error("Container not found");
+            }
             appRef.current = new PIXI.Application<HTMLCanvasElement>({
                 width: window.innerWidth,
                 height: window.innerHeight,
@@ -91,7 +94,7 @@ export default function Canvas({
                 resolution: window.devicePixelRatio || 1,
             });
             renderCanvasGrid(appRef.current);
-            renderGridUnit(appRef.current, drawingItemRef);
+            renderGridUnit(appRef.current);
 
             // Render the stage
             appRef.current.renderer.render(appRef.current.stage);
@@ -109,7 +112,7 @@ export default function Canvas({
             container.removeEventListener("pointermove", handleOnMove);
             container.removeEventListener("pointerup", handleOnUp);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTool, isDrawing]);
 
     useEffect(() => {
@@ -117,13 +120,13 @@ export default function Canvas({
         itemsRef.current = drawingItems;
         drawingItems.forEach((item) => {
             const renderer = tools[item.type].renderer;
-            renderer(item.data, appRef.current!, drawingItemRef);
             renderAngleBetweenLines(
                 drawingItems.map((item) => item.data),
                 appRef.current!,
-                drawingItemRef,
+                graphicsStoreRef,
                 pointNumberRef,
             );
+            renderer(item.data, appRef.current!, graphicsStoreRef);
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [drawingItems, activeTool]);

@@ -1,6 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 export * from "./renderers";
 export * as events from "./events";
-export * from "./calculations";
 export const Icon = (
     <svg height="20" width="20">
         <line

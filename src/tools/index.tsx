@@ -9,7 +9,7 @@ type OnClickArgs = {
     activeTool: ToolsType;
     setActiveTool: React.Dispatch<React.SetStateAction<ToolsType>>;
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
-    drawingItemRef: React.MutableRefObject<
+    graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >;
     pointNumberRef: React.MutableRefObject<number>;
@@ -64,13 +64,13 @@ export const tools = {
         cursor: "cursor-pointer",
         onClick: ({
             setDrawingItems,
-            drawingItemRef,
+            graphicsStoreRef,
             pointNumberRef,
             appRef,
         }: OnClickArgs) => {
             setDrawingItems([]);
-            Object.keys(drawingItemRef.current).forEach((key) => {
-                drawingItemRef.current[key].forEach((g) => {
+            Object.keys(graphicsStoreRef.current).forEach((key) => {
+                graphicsStoreRef.current[key].forEach((g) => {
                     if (appRef.current) {
                         appRef.current.stage.removeChild(g);
                     }

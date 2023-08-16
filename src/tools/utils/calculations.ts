@@ -1,5 +1,4 @@
 import type { Point, Line } from "../../components/DrawingArea";
-import { GRID_UNIT } from "../config";
 
 export function isSamePoint(start: Point, end: Point) {
     return start.x === end.x && start.y === end.y;
@@ -132,37 +131,10 @@ export function slope(point1: Point, point2: Point) {
     return (point2.y - point1.y) / (point2.x - point1.x);
 }
 
-export function findPointParallelToLine(line: Line, distance: number) {
-    const { start: lineStart, end: lineEnd } = line;
-    const midpoint = getMidpoint(lineStart, lineEnd);
-
-    // Calculate the slope of the line
-    const slope = (lineEnd.y - lineStart.y) / (lineEnd.x - lineStart.x);
-
-    // Calculate the perpendicular vector
-    const perpendicularVector = { x: -slope, y: 1 };
-
-    // Calculate the length of the perpendicular vector
-    const perpendicularVectorLength = Math.sqrt(
-        perpendicularVector.x ** 2 + perpendicularVector.y ** 2,
-    );
-
-    // Normalize the perpendicular vector
-    const normalizedPerpendicularVector = {
-        x: perpendicularVector.x / perpendicularVectorLength,
-        y: perpendicularVector.y / perpendicularVectorLength,
-    };
-
-    // Calculate the new point's coordinates
-    const newX = midpoint.x + distance * normalizedPerpendicularVector.x;
-    const newY = midpoint.y + distance * normalizedPerpendicularVector.y;
-
-    return { x: newX, y: newY };
-}
-
 export function findParallelogramFourthPoint(
     triangleVertices: Point[],
     vertexIndex: number,
+    distanceFactor: number,
 ) {
     if (triangleVertices.length !== 3 || vertexIndex < 0 || vertexIndex > 2) {
         return null; // Invalid input
@@ -199,7 +171,8 @@ export function findParallelogramFourthPoint(
     );
 
     // Calculate the desired distance for the fourth point from the chosen vertex
-    const fourthPointDistance = 2 * Math.sqrt(vector1.x ** 2 + vector1.y ** 2);
+    const fourthPointDistance =
+        distanceFactor * Math.sqrt(vector1.x ** 2 + vector1.y ** 2);
 
     // Normalize the angle bisector vector
     const normalizedAngleBisector = {
@@ -222,16 +195,10 @@ function determineOrientationByPoints(point1: Point, point2: Point) {
 
     const deltaThreshold = 2;
 
-    if (Math.abs(deltaX) < deltaThreshold) {
-        return "vertical"; // Vertical or Horizontal
-    } else if (Math.abs(deltaY) < deltaThreshold) {
-        return "horizontal"; // Horizontal or Vertical
-    } else if (deltaY < 0) {
-        return "right"; // Right incline
-    } else if (deltaY > 0) {
-        return "left"; // Left incline
+    if (Math.abs(deltaX) < deltaThreshold || deltaY > 0) {
+        return "right";
     } else {
-        return "horizontal"; // Horizontal (fallback)
+        return "left";
     }
 }
 
@@ -243,31 +210,30 @@ export function getLabelPosition(
     const midpoint = getMidpoint(point1, point2);
     const angle = Math.atan2(point2.y - point1.y, point2.x - point1.x);
     const orientation = determineOrientationByPoints(point1, point2);
-
+    const moveDistance = 15;
     let x = midpoint.x;
     let y = midpoint.y;
 
     // Calculate perpendicular distances
     const perpendicularDistanceLeft = -gap;
     const perpendicularDistanceRight = gap;
-    // console.log(orientation);
 
-    if (orientation === "horizontal") {
-        // y += gap;
-    } else if (orientation === "left") {
-        x += perpendicularDistanceLeft * Math.cos(angle + Math.PI / 2);
-        y += perpendicularDistanceLeft * Math.sin(angle + Math.PI / 2);
-    } else if (orientation === "right") {
-        x += perpendicularDistanceRight * Math.cos(angle - Math.PI / 2);
-        y += perpendicularDistanceRight * Math.sin(angle - Math.PI / 2);
+    // Move closer to the start point by moveDistance units
+    const moveX = moveDistance * Math.cos(angle + Math.PI);
+    const moveY = moveDistance * Math.sin(angle + Math.PI);
+
+    if (orientation === "left") {
+        x += perpendicularDistanceLeft * Math.cos(angle + Math.PI / 2) + moveX;
+        y += perpendicularDistanceLeft * Math.sin(angle + Math.PI / 2) + moveY;
     } else {
-        // x += gap;
+        x += perpendicularDistanceRight * Math.cos(angle - Math.PI / 2) + moveX;
+        y += perpendicularDistanceRight * Math.sin(angle - Math.PI / 2) + moveY;
     }
 
     return { x, y };
 }
 
-export function getMousePos(event: MouseEvent, container?: HTMLElement) {
+export function getPointerPosition(event: MouseEvent, container?: HTMLElement) {
     const pos = { x: 0, y: 0 };
     if (container) {
         // Get the position and size of the component on the page.
@@ -301,87 +267,46 @@ export function getPointNamePosition(
     return { x: newX, y: newY };
 }
 
-function getDirectionVector(point1, point2) {
-    const dx = point2.x - point1.x;
-    const dy = point2.y - point1.y;
-    const magnitude = Math.sqrt(dx * dx + dy * dy);
-    return { x: dx / magnitude, y: dy / magnitude };
-}
-
-// Function to calculate the perpendicular vector
-function getPerpendicularVector(vector) {
-    return { x: -vector.y, y: vector.x };
-}
-
-// Function to calculate the center at a perpendicular distance from a point
-function getCenterAtDistance(point, perpendicularVector, distance) {
-    return {
-        x: point.x + perpendicularVector.x * distance,
-        y: point.y + perpendicularVector.y * distance,
-    };
-}
-
-// Function to check if a point lies inside a triangle
-function isInsideTriangle(p, a, b, c) {
-    function sign(p1, p2, p3) {
-        return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+export function getPointsAppearingOnce(points: Point[]): Point[] {
+    const pointCountMap: Record<string, number> = {};
+    // Count the occurrences of each point
+    for (const point of points) {
+        const key = `${point.x}-${point.y}`;
+        if (pointCountMap[key]) {
+            pointCountMap[key]++;
+        } else {
+            pointCountMap[key] = 1;
+        }
     }
 
-    const d1 = sign(p, a, b);
-    const d2 = sign(p, b, c);
-    const d3 = sign(p, c, a);
+    const result: Point[] = [];
 
-    const hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
-    const hasPos = d1 > 0 || d2 > 0 || d3 > 0;
-
-    return !(hasNeg && hasPos);
+    // Collect points with count 1
+    for (const key in pointCountMap) {
+        if (pointCountMap[key] === 1) {
+            const [x, y] = key.split("-").map(Number);
+            result.push({ x, y });
+        }
+    }
+    console.log("solo points", result);
+    return result;
 }
 
-// Function to calculate centers of two lines at a perpendicular distance of 10 units
-export function getCentersWithLines(line1, line2) {
-    const sharedPoint = line1.start; // Assuming shared point is the start of line 1
+export function isPointAppearingOnce(point: Point, allPoints: Point[]) {
+    const points = getPointsAppearingOnce(allPoints);
+    for (const p of points) {
+        if (isSamePoint(p, point)) {
+            return true;
+        }
+    }
+    return false;
+}
 
-    const line1Direction = getDirectionVector(line1.start, line1.end);
-    const line2Direction = getDirectionVector(line2.start, line2.end);
-
-    const line1Perpendicular = getPerpendicularVector(line1Direction);
-    const line2Perpendicular = getPerpendicularVector(line2Direction);
-
-    const line1Midpoint = {
-        x: (line1.start.x + line1.end.x) / 2,
-        y: (line1.start.y + line1.end.y) / 2,
-    };
-    const line2Midpoint = {
-        x: (line2.start.x + line2.end.x) / 2,
-        y: (line2.start.y + line2.end.y) / 2,
-    };
-
-    const center1 = getCenterAtDistance(sharedPoint, line1Perpendicular, 10);
-    const center2 = getCenterAtDistance(sharedPoint, line2Perpendicular, 10);
-
-    const trianglePoint1 = sharedPoint;
-    const trianglePoint2 = line1Midpoint;
-    const trianglePoint3 = line2Midpoint;
-
-    const areCentersInsideTriangle =
-        isInsideTriangle(
-            center1,
-            trianglePoint1,
-            trianglePoint2,
-            trianglePoint3,
-        ) ||
-        isInsideTriangle(
-            center2,
-            trianglePoint1,
-            trianglePoint2,
-            trianglePoint3,
-        );
-
-    return {
-        center1: center1,
-        center2: center2,
-        insideTriangle: !areCentersInsideTriangle,
-        line1: line1,
-        line2: line2,
-    };
+export function areSameLines(line1: Line, line2: Line) {
+    return (
+        (isSamePoint(line1.start, line2.start) &&
+            isSamePoint(line1.end, line2.end)) ||
+        (isSamePoint(line1.start, line2.end) &&
+            isSamePoint(line1.end, line2.start))
+    );
 }

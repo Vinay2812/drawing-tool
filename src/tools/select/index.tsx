@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 export * as events from "./events"
 export const Icon = (
     <svg
@@ -10,7 +11,6 @@ export const Icon = (
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
-        className="lucide lucide-pointer"
     >
         <path d="M22 14a8 8 0 0 1-8 8" />
         <path d="M18 11v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
