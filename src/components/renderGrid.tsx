@@ -6,7 +6,7 @@ import {
 } from "../tools/utils/config";
 import { getMidpoint } from "../tools/utils/calculations";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
-import { renderCircle } from "../tools/line";
+import { renderPoint } from "../tools/line";
 
 export function renderCanvasGrid(
     app: PIXI.Application<HTMLCanvasElement> | null,
@@ -19,8 +19,8 @@ export function renderCanvasGrid(
 
     // Grid properties
     const gridSize = GRID_UNIT;
-    const gridColor = 0xaaaaaa; // Grid line color
-    const gridAlpha = 0.5; // Grid line opacity
+    const gridColor = "black"; // Grid line color
+    const gridAlpha = 0.8; // Grid line opacity
     const subGridSize = GRID_UNIT / 5;
     const subGridAlpha = 0.1;
 
@@ -37,17 +37,17 @@ export function renderCanvasGrid(
         gridGraphics.lineTo(app.renderer.width, y);
     }
 
-    for (let x = 0; x < app.renderer.width; x += subGridSize) {
-        gridGraphics.lineStyle(1, gridColor, subGridAlpha);
-        gridGraphics.moveTo(x, 0);
-        gridGraphics.lineTo(x, app.renderer.height);
-    }
+    // for (let x = 0; x < app.renderer.width; x += subGridSize) {
+    //     gridGraphics.lineStyle(1, gridColor, subGridAlpha);
+    //     gridGraphics.moveTo(x, 0);
+    //     gridGraphics.lineTo(x, app.renderer.height);
+    // }
 
-    for (let y = 0; y < app.renderer.height; y += subGridSize) {
-        gridGraphics.lineStyle(1, gridColor, subGridAlpha);
-        gridGraphics.moveTo(0, y);
-        gridGraphics.lineTo(app.renderer.width, y);
-    }
+    // for (let y = 0; y < app.renderer.height; y += subGridSize) {
+    //     gridGraphics.lineStyle(1, gridColor, subGridAlpha);
+    //     gridGraphics.moveTo(0, y);
+    //     gridGraphics.lineTo(app.renderer.width, y);
+    // }
 }
 
 export function renderGridUnit(
@@ -72,8 +72,8 @@ export function renderGridUnit(
 
     lineGraphics.moveTo(start.x, start.y);
     lineGraphics.lineTo(end.x, end.y);
-    renderCircle(lineGraphics, start, 4, "blue");
-    renderCircle(lineGraphics, end, 4, "blue");
+    renderPoint(lineGraphics, start, 4, "blue");
+    renderPoint(lineGraphics, end, 4, "blue");
     const midpoint = getMidpoint(line.start, line.end);
     textGraphics.x = midpoint.x - 15;
     textGraphics.y = midpoint.y + 10;

@@ -238,13 +238,18 @@ export function getPointerPosition(event: MouseEvent, container?: HTMLElement) {
     if (container) {
         // Get the position and size of the component on the page.
         const holderOffset = container.getBoundingClientRect();
-        pos.x = event.pageX - holderOffset.x;
-        pos.y = event.pageY - holderOffset.y;
+        const containerScrollX = container.scrollLeft;
+        const containerScrollY = container.scrollTop;
+
+        // Calculate the adjusted pointer position
+        pos.x = event.clientX - holderOffset.x + containerScrollX;
+        pos.y = event.clientY - holderOffset.y + containerScrollY;
     }
     return pos;
 }
 
 export function getPointsFromLines(lines: Line[]) {
+    if (!lines) return [];
     return lines.flatMap((line) => [line.start, line.end]);
 }
 

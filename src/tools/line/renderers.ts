@@ -20,7 +20,23 @@ import {
 import { GRID_UNIT, LINE_WIDTH, textGraphicsOptions } from "../utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 
-export function renderCircle(
+export function removeGraphicsFromStore(
+    key: string,
+    graphicsStoreRef: React.MutableRefObject<
+        Record<string, (SmoothGraphics | PIXI.Text)[]>
+    >,
+    app: PIXI.Application<HTMLCanvasElement>,
+) {
+    graphicsStoreRef.current[key]?.forEach((g) => {
+        if (g instanceof PIXI.Text) {
+            g.text = "";
+        } else {
+            app.stage.removeChild(g);
+        }
+    });
+}
+
+export function renderPoint(
     graphics: SmoothGraphics,
     point: Point,
     radius: number,
@@ -41,8 +57,8 @@ export function renderLine(
 
     graphics.moveTo(start.x, start.y);
     graphics.lineTo(end.x, end.y);
-    renderCircle(graphics, start, 4, color);
-    renderCircle(graphics, end, 4, color);
+    renderPoint(graphics, start, 4, color);
+    renderPoint(graphics, end, 4, color);
 }
 
 export function renderDistanceOnLine(textGraphics: PIXI.Text, line: Line) {
@@ -64,7 +80,7 @@ export function renderDistanceOnLine(textGraphics: PIXI.Text, line: Line) {
     // const gap = 10;
     const p = getLabelPosition(p1, p2, gap);
     textGraphics.rotation = angle;
-    // renderCircle(graphics, p, 3, "blue");
+    // renderPoint(graphics, p, 3, "blue");
     textGraphics.x = p.x;
     textGraphics.y = p.y;
 }
@@ -81,11 +97,9 @@ export function renderLineWithMeasurements(
     const { start, end } = line;
     if (!lineGraphics) lineGraphics = new SmoothGraphics();
     if (!textGraphics) textGraphics = new PIXI.Text("", textGraphicsOptions);
-    const key = `${JSON.stringify(start)}-${JSON.stringify(end)}`;
+    const key = `line-${JSON.stringify(start)}-${JSON.stringify(end)}`;
     if (!graphicsStoreRef.current[key]) {
-        {
-            graphicsStoreRef.current[key] = [];
-        }
+        graphicsStoreRef.current[key] = [];
     } else {
         graphicsStoreRef.current[key].forEach((item) => {
             app.stage.removeChild(item);
@@ -99,31 +113,6 @@ export function renderLineWithMeasurements(
     renderDistanceOnLine(textGraphics, { start, end });
     app.stage.addChild(lineGraphics);
     app.stage.addChild(textGraphics);
-}
-
-export function renderPointName(
-    line: Line,
-    graphicsStoreRef: React.MutableRefObject<
-        Record<string, (SmoothGraphics | PIXI.Text)[]>
-    >,
-    app: PIXI.Application<HTMLCanvasElement>,
-) {
-    const pointLabelKey = `point-${JSON.stringify(line.start)}`;
-    let pointLabelGraphics = new PIXI.Text("A", textGraphicsOptions);
-    if (graphicsStoreRef.current[pointLabelKey]) {
-        pointLabelGraphics = graphicsStoreRef.current[
-            pointLabelKey
-        ][0] as PIXI.Text;
-        app.stage.removeChild(pointLabelGraphics);
-    } else {
-        graphicsStoreRef.current[pointLabelKey] = [pointLabelGraphics];
-    }
-
-    const p3 = getPointNamePosition(line.end, line.start, 10);
-    pointLabelGraphics.x = p3.x;
-    pointLabelGraphics.y = p3.y;
-
-    app.stage.addChild(pointLabelGraphics);
 }
 
 function renderPointLabel(
@@ -185,7 +174,7 @@ function renderAngleGraphics(
     if (!controlPoint) return;
 
     // Create a Graphics object to draw the arc
-    graphics.lineStyle(3, "white", 1, 0.5);
+    graphics.lineStyle(2, "black", 1, 0.5);
 
     // Draw the arc
     graphics.moveTo(arcStartPoint.x, arcStartPoint.y);
@@ -244,9 +233,8 @@ export function renderAngleBetweenLines(
             if (angleDegrees === -1) {
                 continue;
             }
-            const g = graphics ?? new SmoothGraphics();
-            const atg =
-                angleTextGraphics ?? new PIXI.Text("", textGraphicsOptions);
+            const g = new SmoothGraphics();
+            const atg = new PIXI.Text("", textGraphicsOptions);
 
             renderAngleGraphics(
                 line1,
@@ -265,15 +253,23 @@ export function renderAngleBetweenLines(
                 graphicsStoreRef,
                 pointNumberRef,
             );
+
+            // const key = `angle-${JSON.stringify(commonPoint)}-${JSON.stringify(
+            //     line1.end,
+            // )}-${JSON.stringify(line2.end)}`;
+            const key = `angle-${JSON.stringify(commonPoint)}`
+
+            // if (!graphicsStoreRef.current[key]) {
+            //     graphicsStoreRef.current[key] = [];
+            // }
             app.stage.addChild(g);
             app.stage.addChild(atg);
 
-            const key = `${JSON.stringify(commonPoint)}-${JSON.stringify(
-                line1.end,
-            )}-${JSON.stringify(line2.end)}`;
-            if (!graphicsStoreRef.current[key]) {
-                graphicsStoreRef.current[key] = [];
-            }
+            graphicsStoreRef.current[key]?.forEach((g) => app.stage.removeChild(g));
+            graphicsStoreRef.current[key] = []
+
+            // app.stage.addChild(g);
+            // app.stage.addChild(atg);
             graphicsStoreRef.current[key].push(g);
             graphicsStoreRef.current[key].push(atg);
         }

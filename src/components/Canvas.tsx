@@ -1,12 +1,42 @@
 import * as PIXI from "pixi.js";
 import { ToolsType, tools } from "../tools";
-import { DrawingItem, Point } from "./DrawingArea";
+import { DrawingItem, Line, Point } from "./DrawingArea";
 import { useEffect, useRef } from "react";
 import { renderCanvasGrid, renderGridUnit } from "./renderGrid";
-import { textGraphicsOptions } from "../tools/utils/config";
+import {
+    textGraphicsOptions,
+    windowHeight,
+    windowWidth,
+} from "../tools/utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { renderAngleBetweenLines } from "../tools/line";
-import { PointerEventsProps } from "../tools/line/events";
+
+export type ShapeData = Line;
+
+export type PointerEventsProps = {
+    startPoint: Point | null;
+    setStartPoint: (point: Point | null) => void;
+    isDrawing: boolean;
+    setIsDrawing: (val: boolean) => void;
+    selectedPoint: Point | null;
+    setSelectedPoint: (point: Point | null) => void;
+    drawingItems: DrawingItem[];
+    setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
+    shapes: Record<ToolsType, ShapeData[]>;
+    container: HTMLElement;
+    app: PIXI.Application<HTMLCanvasElement>;
+    angleTextGraphics: PIXI.Text;
+    textGraphics: PIXI.Text;
+    graphics: SmoothGraphics;
+    graphicsStoreRef: React.MutableRefObject<
+        Record<string, (SmoothGraphics | PIXI.Text)[]>
+    >;
+    pointNumberRef: React.MutableRefObject<number>;
+    lastTouchRef: React.MutableRefObject<{
+        x: number;
+        y: number;
+    }>;
+};
 
 type Props = {
     activeTool: ToolsType;
@@ -40,13 +70,13 @@ export default function Canvas({
     const textGraphics = new PIXI.Text("", textGraphicsOptions);
     const angleTextGraphics = new PIXI.Text("", textGraphicsOptions);
     const itemsRef = useRef(drawingItems);
+    const lastTouchRef = useRef({ x: 0, y: 0 });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getProps = (): PointerEventsProps => {
         return {
             startPoint: startPoint.current,
             isDrawing: isDrawing.current,
-            lines: itemsRef.current.map((item) => item.data),
             container: containerRef.current!,
             app: appRef.current!,
             angleTextGraphics,
@@ -55,11 +85,19 @@ export default function Canvas({
             graphicsStoreRef,
             selectedPoint: selectedPoint.current,
             setDrawingItems,
-            pointNumberRef,
             setStartPoint,
             setSelectedPoint,
             setIsDrawing,
             drawingItems,
+            pointNumberRef,
+            lastTouchRef,
+            shapes: itemsRef.current.reduce((data, item) => {
+                if (!data[item.type]) {
+                    data[item.type] = [];
+                }
+                data[item.type].push(item.data);
+                return data;
+            }, {} as Record<ToolsType, ShapeData[]>),
         };
     };
 
@@ -85,49 +123,54 @@ export default function Canvas({
                 throw Error("Container not found");
             }
             appRef.current = new PIXI.Application<HTMLCanvasElement>({
-                width: window.innerWidth,
-                height: window.innerHeight,
+                width: windowWidth,
+                height: windowHeight,
                 backgroundColor: "transparent", // Background color
                 backgroundAlpha: 0,
                 antialias: true,
                 autoDensity: true,
-                resolution: window.devicePixelRatio || 1,
+                resolution: devicePixelRatio ?? 1,
             });
-            renderCanvasGrid(appRef.current);
-            renderGridUnit(appRef.current);
 
-            // Render the stage
             appRef.current.renderer.render(appRef.current.stage);
+            appRef.current.screen.fit(new PIXI.Rectangle(0, 0, 6000, 8000));
             containerRef.current.appendChild(appRef.current.view);
+            containerRef.current.scrollTop = 0;
+            setTimeout(() => {
+                if (!appRef.current || !containerRef.current) return;
+                appRef.current.resizeTo = containerRef.current;
+                renderCanvasGrid(appRef.current);
+                renderGridUnit(appRef.current);
+            }, 100);
         }
-
         const container = containerRef.current!;
         if (!container || !appRef.current) return;
         container.addEventListener("pointerdown", handleOnDown);
         container.addEventListener("pointermove", handleOnMove);
         container.addEventListener("pointerup", handleOnUp);
+        container.addEventListener("pointerout", handleOnUp);
 
         return () => {
             container.removeEventListener("pointerdown", handleOnDown);
             container.removeEventListener("pointermove", handleOnMove);
             container.removeEventListener("pointerup", handleOnUp);
+            container.removeEventListener("pointerout", handleOnUp);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTool, isDrawing]);
 
     useEffect(() => {
-        // const points = getPointsFromLines(drawingItems);
         itemsRef.current = drawingItems;
         drawingItems.forEach((item) => {
             const renderer = tools[item.type].renderer;
-            renderAngleBetweenLines(
-                drawingItems.map((item) => item.data),
-                appRef.current!,
-                graphicsStoreRef,
-                pointNumberRef,
-            );
             renderer(item.data, appRef.current!, graphicsStoreRef);
         });
+        renderAngleBetweenLines(
+            drawingItems.map((item) => item.data),
+            appRef.current!,
+            graphicsStoreRef,
+            pointNumberRef,
+        );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [drawingItems, activeTool]);
     return <div></div>;

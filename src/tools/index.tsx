@@ -3,7 +3,9 @@ import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { DrawingItem } from "../components/DrawingArea";
 import * as lineTool from "./line";
 import * as selectTool from "./select";
+import * as circleTool from "./circle";
 import * as PIXI from "pixi.js";
+import { HTMLAttributes } from "react";
 
 type OnClickArgs = {
     activeTool: ToolsType;
@@ -17,15 +19,6 @@ type OnClickArgs = {
 };
 
 export const tools = {
-    line: {
-        renderer: lineTool.renderLineWithMeasurements,
-        icon: lineTool.Icon,
-        events: lineTool.events,
-        cursor: "cursor-crosshair",
-        onClick: (args: OnClickArgs) => {
-            args.setActiveTool("line");
-        },
-    },
     select: {
         renderer: () => null,
         icon: selectTool.Icon,
@@ -34,10 +27,31 @@ export const tools = {
         onClick: (args: OnClickArgs) => {
             args.setActiveTool("select");
         },
+        isLeft: true,
+    },
+    line: {
+        renderer: lineTool.renderLineWithMeasurements,
+        icon: lineTool.Icon,
+        events: lineTool.events,
+        cursor: "cursor-crosshair",
+        onClick: (args: OnClickArgs) => {
+            args.setActiveTool("line");
+        },
+        isLeft: true,
+    },
+    circle: {
+        renderer: circleTool.renderCircleWithMeasurements,
+        icon: circleTool.Icon,
+        events: circleTool.events,
+        cursor: "cursor-crosshair",
+        onClick: (args: OnClickArgs) => {
+            args.setActiveTool("circle");
+        },
+        isLeft: true,
     },
     clear: {
         renderer: () => null,
-        icon: (
+        icon: (props: HTMLAttributes<SVGElement>) => (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -48,7 +62,7 @@ export const tools = {
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                // className="lucide lucide-x-circle"
+                {...props}
             >
                 <circle cx="12" cy="12" r="10" />
                 <path d="m15 9-6 6" />
@@ -78,6 +92,7 @@ export const tools = {
             });
             pointNumberRef.current = 0;
         },
+        isLeft: false,
     },
 };
 export type Tools = typeof tools;

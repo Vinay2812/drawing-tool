@@ -1,10 +1,4 @@
-import * as PIXI from "pixi.js";
-import { GRID_UNIT } from "../utils/config";
-import {
-    DrawingItem,
-    type Line,
-    type Point,
-} from "../../components/DrawingArea";
+import { GRID_UNIT, textGraphicsOptions } from "../utils/config";
 import {
     getClosestPoint,
     getPointerPosition,
@@ -15,32 +9,12 @@ import {
     renderNewLine,
     renderAngleBetweenLines,
 } from "./renderers";
-import { SmoothGraphics } from "@pixi/graphics-smooth";
-
-export type PointerEventsProps = {
-    startPoint: Point | null;
-    setStartPoint: (point: Point | null) => void;
-    isDrawing: boolean;
-    setIsDrawing: (val: boolean) => void;
-    selectedPoint: Point | null;
-    setSelectedPoint: (point: Point | null) => void;
-    drawingItems: DrawingItem[];
-    setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
-    lines: Line[];
-    container: HTMLElement;
-    app: PIXI.Application<HTMLCanvasElement>;
-    angleTextGraphics: PIXI.Text;
-    textGraphics: PIXI.Text;
-    graphics: SmoothGraphics;
-    graphicsStoreRef: React.MutableRefObject<
-        Record<string, (SmoothGraphics | PIXI.Text)[]>
-    >;
-    pointNumberRef: React.MutableRefObject<number>;
-};
+import { PointerEventsProps } from "../../components/Canvas";
+import * as PIXI from "pixi.js"
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
-    const { lines, container, setStartPoint, setIsDrawing } = others;
-    // const lines = itemsRef.current.map((item) => item.data);
+    const { container, setStartPoint, setIsDrawing, shapes } = others;
+    const lines = shapes["line"] ?? [];
     const points = getPointsFromLines(lines);
     const startPoint = getPointerPosition(e, container);
     const closestPoint = getClosestPoint(startPoint, points, GRID_UNIT / 2);
@@ -53,7 +27,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     const {
         startPoint,
         isDrawing,
-        lines,
         container,
         app,
         angleTextGraphics,
@@ -61,11 +34,13 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         graphics,
         graphicsStoreRef,
         pointNumberRef,
+        shapes,
     } = others;
     if (!startPoint || !isDrawing) return;
     // const lines = itemsRef.current.map((item) => item.data);
     const end = getPointerPosition(e, container);
     const start = startPoint;
+    const lines = shapes["line"] ?? [];
     graphics.clear();
     textGraphics.text = "";
     angleTextGraphics.text = "";
@@ -82,7 +57,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         graphicsStoreRef,
         pointNumberRef,
         graphics,
-        angleTextGraphics,
+        angleTextGraphics
     );
     app.stage.addChild(textGraphics);
     app.stage.addChild(graphics);
@@ -92,7 +67,6 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
     const {
         startPoint,
         isDrawing,
-        lines,
         setIsDrawing,
         angleTextGraphics,
         textGraphics,
@@ -100,15 +74,18 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         setDrawingItems,
         container,
         setStartPoint,
+        shapes,
+        app
     } = others;
     if (!startPoint || !isDrawing) return;
     graphics.clear();
 
     textGraphics.text = "";
     angleTextGraphics.text = "";
+
     const start = startPoint;
     const end = getPointerPosition(e, container);
-    // const lines = itemsRef.current.map((item) => item.data);
+    const lines = shapes["line"] ?? [];
     const points = getPointsFromLines(lines);
     const updatedStart = getClosestPoint(start, points, GRID_UNIT / 2);
     const updatedEnd = getClosestPoint(end, points, GRID_UNIT / 2);
