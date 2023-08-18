@@ -16,7 +16,7 @@ import {
     slope,
     areSameLines,
 } from "../utils/calculations";
-import { GRID_UNIT, LINE_WIDTH, textGraphicsOptions } from "../utils/config";
+import { GRID_UNIT, LINE_WIDTH, isMobile, textGraphicsOptions } from "../utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 
 export function removeGraphicsFromStore(
@@ -67,7 +67,7 @@ export function renderDistanceOnLine(textGraphics: PIXI.Text, line: Line) {
     // const textWidth =
     let p1 = start;
     let p2 = end;
-    let gap = GRID_UNIT / 3.5 + LINE_WIDTH * 1.2;
+    let gap = GRID_UNIT / (isMobile() ?  3.5 : 2) + LINE_WIDTH * 1.2;
 
     if ((p2.x < p1.x && p2.y < p1.y) || (p2.x < p1.x && p2.y > p1.y)) {
         p1 = end;

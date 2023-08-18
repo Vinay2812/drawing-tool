@@ -2,9 +2,6 @@ import * as PIXI from "pixi.js";
 export const windowWidth = window.innerWidth;
 export const windowHeight = window.innerHeight;
 // export const GRID_UNIT = Math.min(windowHeight / 6, 100);
-export const GRID_UNIT = 50;
-export const LINE_WIDTH = 5;
-
 export const isMobile = () => {
     return (
         /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -12,6 +9,9 @@ export const isMobile = () => {
         ) || window.innerWidth <= 768
     );
 };
+export const GRID_UNIT = 50;
+export const LINE_WIDTH = 5;
+
 
 export const textGraphicsOptions: Partial<PIXI.ITextStyle> | PIXI.TextStyle = {
     fontSize:
