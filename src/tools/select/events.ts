@@ -148,8 +148,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         app,
         graphicsStoreRef,
         pointNumberRef,
-        graphics,
-        angleTextGraphics,
     );
 
     app.stage.addChild(textGraphics);

@@ -11,7 +11,6 @@ import {
     getCommonPoint,
     getDistance,
     getLabelPosition,
-    getPointNamePosition,
     isSamePoint,
     roundupNumber,
     slope,
@@ -201,8 +200,6 @@ export function renderAngleBetweenLines(
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
     pointNumberRef: React.MutableRefObject<number>,
-    graphics?: SmoothGraphics,
-    angleTextGraphics?: PIXI.Text,
 ) {
     for (let i = 0; i < lines.length; i++) {
         for (let j = i + 1; j < lines.length; j++) {

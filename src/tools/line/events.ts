@@ -1,4 +1,4 @@
-import { GRID_UNIT, textGraphicsOptions } from "../utils/config";
+import { GRID_UNIT } from "../utils/config";
 import {
     getClosestPoint,
     getPointerPosition,
@@ -10,7 +10,6 @@ import {
     renderAngleBetweenLines,
 } from "./renderers";
 import { PointerEventsProps } from "../../components/Canvas";
-import * as PIXI from "pixi.js"
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
     const { container, setStartPoint, setIsDrawing, shapes } = others;
@@ -56,8 +55,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         app,
         graphicsStoreRef,
         pointNumberRef,
-        graphics,
-        angleTextGraphics
     );
     app.stage.addChild(textGraphics);
     app.stage.addChild(graphics);
@@ -75,7 +72,6 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         container,
         setStartPoint,
         shapes,
-        app
     } = others;
     if (!startPoint || !isDrawing) return;
     graphics.clear();

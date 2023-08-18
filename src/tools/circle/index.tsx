@@ -1,4 +1,5 @@
 import { HTMLAttributes } from "react";
+import { OnClickArgs } from "..";
 
 /* eslint-disable react-refresh/only-export-components */
 export * from "./renderer";
@@ -20,3 +21,7 @@ export const Icon = (props: HTMLAttributes<SVGElement>) => (
         <circle cx="12" cy="12" r="10" />
     </svg>
 );
+
+export const onClick = (args: OnClickArgs) => {
+    args.setActiveTool("circle");
+}

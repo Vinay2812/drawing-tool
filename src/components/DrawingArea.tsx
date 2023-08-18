@@ -5,7 +5,6 @@ import { tools, type ToolsType } from "../tools";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getShapesData } from "../utils/shapes";
 import { getDistance } from "../tools/utils/calculations";
-import { windowHeight } from "../tools/utils/config";
 const Canvas = lazy(() => import("./Canvas"));
 
 export type Point = {
@@ -62,11 +61,18 @@ export default function DrawingArea() {
     const appRef = useRef<PIXI.Application<HTMLCanvasElement> | null>(null);
     const [activeTool, setActiveTool] = useState<ToolsType>("select");
     const [drawingItems, setDrawingItems] = useState<DrawingItem[]>([]);
+    const [undoItems, setUndoItems] = useState<DrawingItem[]>([]);
     const graphicsStoreRef = useRef<
         Record<string, Array<SmoothGraphics | PIXI.Text>>
     >({});
     const pointNumberRef = useRef<number>(0);
     const [shapesData, setShapesData] = useState<ShapeData[]>([]);
+    const [historyIdx, setHistoryIdx] = useState(0);
+
+    useEffect(() => {
+        setHistoryIdx(drawingItems.length);
+    }, [drawingItems]);
+
     function handleSubmit() {
         const lines = drawingItems
             .filter((item) => item.type === "line")
@@ -87,9 +93,6 @@ export default function DrawingArea() {
         setShapesData([...combinedLines, ...circles]);
     }
     useEffect(() => {
-        // console.clear();
-    }, [drawingItems, shapesData]);
-    useEffect(() => {
         // console.log("shapes data", shapesData)
         shapesData.forEach((shape, idx) => {
             console.log(`${shape.type}-${idx + 1}`, shape.data);
@@ -97,7 +100,8 @@ export default function DrawingArea() {
     }, [shapesData]);
 
     const canvasWidth = Math.min(window.innerWidth, 800);
-    const canvasHeight = 2 * window.innerHeight;
+    // const canvasHeight = 2 * window.innerHeight;
+    const canvasHeight = 600;
 
     return (
         <div className="flex flex-col items-center">
@@ -105,15 +109,26 @@ export default function DrawingArea() {
             <Toolbox
                 activeTool={activeTool}
                 setActiveTool={setActiveTool}
+                drawingItems={drawingItems}
                 setDrawingItems={setDrawingItems}
+                undoItems={undoItems}
+                setUndoItems={setUndoItems}
+                // drawingItems={drawingItems}
+                // setDrawingItems={setActiveDrawingItems}
                 graphicsStoreRef={graphicsStoreRef}
                 pointNumberRef={pointNumberRef}
                 appRef={appRef}
-                className={`flex gap-2 justify-between py-1 lg:py-2 h-[55px] w-[${canvasWidth}px] bg-white`}
+                historyIdx={historyIdx}
+                setHistoryIdx={setHistoryIdx}
+                className={`flex gap-2 justify-between py-4 h-[72px] w-[${
+                    canvasWidth - 20
+                }px] bg-white`}
             />
             <div
                 id="canvas-container"
-                className={`w-[${canvasWidth}px] h-[${canvasHeight - 55}px] ${
+                className={`w-[${canvasWidth - 20}px] h-[${
+                    canvasHeight - 1
+                }px] ${
                     tools[activeTool].cursor ?? "cursor-pointer"
                 } bg-white outline outline-1 outline-gray-400 overflow-clip`}
             />
@@ -125,6 +140,7 @@ export default function DrawingArea() {
                 graphicsStoreRef={graphicsStoreRef}
                 pointNumberRef={pointNumberRef}
                 appRef={appRef}
+                setUndoItems={setUndoItems}
             />
             <button
                 className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4"

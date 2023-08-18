@@ -47,6 +47,7 @@ type Props = {
     >;
     pointNumberRef: React.MutableRefObject<number>;
     appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>;
+    setUndoItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
 };
 
 export default function Canvas({
@@ -56,6 +57,7 @@ export default function Canvas({
     graphicsStoreRef,
     pointNumberRef,
     appRef,
+    setUndoItems,
 }: Props) {
     const containerRef = useRef<HTMLElement | null>(null);
 
@@ -108,6 +110,7 @@ export default function Canvas({
 
     function handleOnDown(e: MouseEvent) {
         const props = getProps();
+        setUndoItems([]);
         return tools[activeTool].events.onDown(e, props);
     }
 

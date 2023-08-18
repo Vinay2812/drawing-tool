@@ -2,25 +2,41 @@ import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { type ToolsType, tools } from "../tools";
 import * as PIXI from "pixi.js";
 import { DrawingItem } from "./DrawingArea";
+import { isMobile } from "../tools/utils/config";
 
-type Props = {
+export type ToolboxProps = {
     activeTool: ToolsType;
     setActiveTool: React.Dispatch<React.SetStateAction<ToolsType>>;
+    drawingItems: DrawingItem[];
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
+    undoItems: DrawingItem[];
+    setUndoItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
     graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >;
     pointNumberRef: React.MutableRefObject<number>;
     appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>;
-} & React.HTMLAttributes<HTMLDivElement>;
+    historyIdx: number;
+    setHistoryIdx: React.Dispatch<React.SetStateAction<number>>;
+};
 
-export default function Toolbox(props: Props) {
-    const leftTools = Object.entries(tools).filter(([_, { isLeft }]) => {
-        return isLeft;
+export default function Toolbox(
+    props: ToolboxProps & React.HTMLAttributes<HTMLDivElement>,
+) {
+    const leftTools = Object.entries(tools).filter((tool) => {
+        return tool[1].isLeft;
     });
-    const rightTools = Object.entries(tools).filter(([_, { isLeft }]) => {
-        return !isLeft;
+    const rightTools = Object.entries(tools).filter((tool) => {
+        return !tool[1].isLeft;
     });
+
+    function isToolDisabled(toolName: ToolsType) {
+        const { undoItems, drawingItems } = props;
+        if (drawingItems.length === 0 && undoItems.length === 0) return true;
+        if (toolName === "redo") return undoItems.length === 0;
+
+        return drawingItems.length === 0;
+    }
     return (
         <div {...props}>
             <div className="border border-gray-500 flex">
@@ -45,26 +61,36 @@ export default function Toolbox(props: Props) {
                     );
                 })}
             </div>
-            <div className="flex">
+            <div className="flex gap-2">
                 {rightTools.map(([toolName, tool]) => {
                     const Icon = tool.icon;
+                    const isActive = props.activeTool === toolName;
+                    const disabled = isToolDisabled(toolName as ToolsType);
                     return (
                         <button
                             key={toolName}
+                            disabled={disabled}
                             onClick={() =>
                                 tools[toolName as ToolsType].onClick(props)
                             }
-                            className={`text-white p-2 cursor-pointer border-gray-500 outline outline-4 hover:outline-gray-200 hover:bg-gray-200 hover:rounded-full ${
-                                props.activeTool === toolName
-                                    ? "bg-white"
-                                    : "bg-transparent"
+                            className={`text-white p-2 mx-1 cursor-pointer border-gray-500 outline outline-2 ${!isMobile() && "hover:outline-gray-200 hover:bg-gray-200 hover:rounded-full"} ${
+                                isActive ? "bg-white" : "bg-transparent"
+                            } ${
+                                disabled &&
+                                "disabled:cursor-not-allowed disabled:bg-transparent disabled:outline-none"
                             }`}
                         >
                             <Icon
                                 // className="text-white"
                                 style={{
                                     stroke:
-                                        toolName === "clear" ? "red" : "black",
+                                        toolName === "clear"
+                                            ? disabled
+                                                ? "tomato"
+                                                : "red"
+                                            : disabled
+                                            ? "gray"
+                                            : "black",
                                 }}
                             />
                         </button>

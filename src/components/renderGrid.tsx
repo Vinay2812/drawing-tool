@@ -10,6 +10,7 @@ import { renderPoint } from "../tools/line";
 
 export function renderCanvasGrid(
     app: PIXI.Application<HTMLCanvasElement> | null,
+    showSubgrid = false,
 ) {
     if (!app) return;
     const gridGraphics = new SmoothGraphics();
@@ -21,8 +22,6 @@ export function renderCanvasGrid(
     const gridSize = GRID_UNIT;
     const gridColor = "black"; // Grid line color
     const gridAlpha = 0.8; // Grid line opacity
-    const subGridSize = GRID_UNIT / 5;
-    const subGridAlpha = 0.1;
 
     // Draw the grid lines
     for (let x = 0; x < app.renderer.width; x += gridSize) {
@@ -37,17 +36,21 @@ export function renderCanvasGrid(
         gridGraphics.lineTo(app.renderer.width, y);
     }
 
-    // for (let x = 0; x < app.renderer.width; x += subGridSize) {
-    //     gridGraphics.lineStyle(1, gridColor, subGridAlpha);
-    //     gridGraphics.moveTo(x, 0);
-    //     gridGraphics.lineTo(x, app.renderer.height);
-    // }
+    if (showSubgrid) {
+        const subGridSize = GRID_UNIT / 5;
+        const subGridAlpha = 0.1;
+        for (let x = 0; x < app.renderer.width; x += subGridSize) {
+            gridGraphics.lineStyle(1, gridColor, subGridAlpha);
+            gridGraphics.moveTo(x, 0);
+            gridGraphics.lineTo(x, app.renderer.height);
+        }
 
-    // for (let y = 0; y < app.renderer.height; y += subGridSize) {
-    //     gridGraphics.lineStyle(1, gridColor, subGridAlpha);
-    //     gridGraphics.moveTo(0, y);
-    //     gridGraphics.lineTo(app.renderer.width, y);
-    // }
+        for (let y = 0; y < app.renderer.height; y += subGridSize) {
+            gridGraphics.lineStyle(1, gridColor, subGridAlpha);
+            gridGraphics.moveTo(0, y);
+            gridGraphics.lineTo(app.renderer.width, y);
+        }
+    }
 }
 
 export function renderGridUnit(
