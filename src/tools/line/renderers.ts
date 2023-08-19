@@ -159,7 +159,7 @@ function renderAngleGraphics(
 
     const minLength = Math.min(line1Length, line2Length);
 
-    const gap = Math.min(minLength, GRID_UNIT) * 0.4;
+    const gap = Math.min(minLength, GRID_UNIT) * (isMobile() ? 0.4 : 0.6);
     const controlPointFactor = 1.5;
 
     const arcStartPoint = findPointAtDistance(line1, gap);
