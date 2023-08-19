@@ -30,7 +30,7 @@ export const onClick = (args: OnClickArgs) => {
     args.setActiveTool("pencil");
 };
 export const isLeft = true;
-export const cursor = "cursor-pointer";
+export const cursor = "cursor-default";
 
 export const config = {
     name: toolName as "pencil",

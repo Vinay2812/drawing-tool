@@ -11,10 +11,7 @@ import {
     isPointAppearingOnce,
     getLineFromLines,
 } from "../utils/calculations";
-import {
-    renderLineWithMeasurements,
-    renderAngleBetweenLines,
-} from "../line/renderers";
+import { renderLineGraphics, renderAngleBetweenLines } from "../line/renderers";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getAngleKey, getLineKey } from "../utils/keys";
 
@@ -53,7 +50,7 @@ export function removeLineGraphics(
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
     const { container, setStartPoint, setIsDrawing, setSelectedPoint, shapes } =
         others;
-    const lines = shapes["line"] ?? [];
+    const lines = (shapes["line"] ?? []) as Line[];
     const clickedPoint = getPointerPosition(e, container);
     const points = getPointsFromLines(lines);
     const endPoint = getClosestPoint(clickedPoint, points, GRID_UNIT / 2);
@@ -98,7 +95,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     graphics.clear();
     textGraphics.text = "";
     angleTextGraphics.text = "";
-    const lines = shapes["line"] ?? [];
+    const lines = (shapes["line"] ?? []) as Line[];
     const selectedLine = {
         start: start,
         end: selectedPoint,
@@ -107,7 +104,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     const removingLine = getLineFromLines(selectedLine, lines);
     if (removingLine) {
         const newLine: Line = { start, end, shapeId: removingLine.shapeId };
-        renderLineWithMeasurements(
+        renderLineGraphics(
             newLine,
             app,
             graphicsStoreRef,
@@ -158,7 +155,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         end: selectedPoint,
         shapeId: -1,
     };
-    const lines = shapes["line"] ?? [];
+    const lines = (shapes["line"] ?? []) as Line[];
     const removingLine = getLineFromLines(selectedLine, lines);
     if (removingLine) {
         const filteredLines = lines.filter(

@@ -5,7 +5,7 @@ import {
     getPointsFromLines,
 } from "../utils/calculations";
 import {
-    renderLineWithMeasurements,
+    renderLineGraphics,
     renderNewLine,
     renderAngleBetweenLines,
 } from "./renderers";
@@ -15,7 +15,7 @@ import { Line } from "../../components/DrawingArea";
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
     const { container, setStartPoint, setIsDrawing, shapes } = others;
     const lines = shapes["line"] ?? [];
-    const points = getPointsFromLines(lines);
+    const points = getPointsFromLines(lines as Line[]);
     const startPoint = getPointerPosition(e, container);
     const closestPoint = getClosestPoint(startPoint, points, GRID_UNIT / 2);
 
@@ -40,11 +40,11 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     // const lines = itemsRef.current.map((item) => item.data);
     const end = getPointerPosition(e, container);
     const start = startPoint;
-    const lines = shapes["line"] ?? [];
+    const lines = (shapes["line"] ?? []) as Line[];
     graphics.clear();
     textGraphics.text = "";
     angleTextGraphics.text = "";
-    renderLineWithMeasurements(
+    renderLineGraphics(
         { start, end, shapeId: lines.length + 1 },
         app,
         graphicsStoreRef,
@@ -82,7 +82,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
 
     const start = startPoint;
     const end = getPointerPosition(e, container);
-    const lines = shapes["line"] ?? [];
+    const lines = (shapes["line"] ?? []) as Line[];
     const points = getPointsFromLines(lines);
     const updatedStart = getClosestPoint(start, points, GRID_UNIT / 2);
     const updatedEnd = getClosestPoint(end, points, GRID_UNIT / 2);

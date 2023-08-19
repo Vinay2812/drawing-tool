@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { HTMLAttributes } from "react";
 import { OnClickArgs, PointerEvents } from "..";
-import { renderLineWithMeasurements } from "./renderers";
+import { renderLineGraphics } from "./renderers";
 
 export const toolName = "line";
-export const renderer = renderLineWithMeasurements;
+export const renderer = renderLineGraphics;
 import * as events from "./events";
 export const Icon = (props: HTMLAttributes<SVGElement>) => (
     <svg height="24" width="24" {...props}>

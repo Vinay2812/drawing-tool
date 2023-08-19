@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { ToolsType, tools } from "../tools";
-import { DrawingItem, Line, Point } from "./DrawingArea";
+import { Circle, DrawingItem, Line, Pencil, Point } from "./DrawingArea";
 import { useEffect, useRef } from "react";
 import { renderCanvasGrid, renderGridUnit } from "./renderGrid";
 import {
@@ -11,7 +11,7 @@ import {
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { renderAngleBetweenLines } from "../tools/line";
 
-export type ShapeData = Line;
+export type Shape = Line | Circle | Pencil;
 
 export type PointerEventsProps = {
     startPoint: Point | null;
@@ -22,7 +22,7 @@ export type PointerEventsProps = {
     setSelectedPoint: (point: Point | null) => void;
     drawingItems: DrawingItem[];
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
-    shapes: Record<ToolsType, ShapeData[]>;
+    shapes: Record<ToolsType, Shape[]>;
     container: HTMLElement;
     app: PIXI.Application<HTMLCanvasElement>;
     angleTextGraphics: PIXI.Text;
@@ -36,6 +36,7 @@ export type PointerEventsProps = {
         x: number;
         y: number;
     }>;
+    pencilPointsRef: React.MutableRefObject<Point[]>;
 };
 
 type Props = {
@@ -73,6 +74,7 @@ export default function Canvas({
     const angleTextGraphics = new PIXI.Text("", textGraphicsOptions);
     const itemsRef = useRef(drawingItems);
     const lastTouchRef = useRef({ x: 0, y: 0 });
+    const pencilPointsRef = useRef<Point[]>([]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getProps = (): PointerEventsProps => {
@@ -93,13 +95,14 @@ export default function Canvas({
             drawingItems,
             pointNumberRef,
             lastTouchRef,
+            pencilPointsRef,
             shapes: itemsRef.current.reduce((data, item) => {
                 if (!data[item.type]) {
                     data[item.type] = [];
                 }
                 data[item.type].push(item.data);
                 return data;
-            }, {} as Record<ToolsType, ShapeData[]>),
+            }, {} as Record<ToolsType, Shape[]>),
         };
     };
 
@@ -166,10 +169,12 @@ export default function Canvas({
         itemsRef.current = drawingItems;
         drawingItems.forEach((item) => {
             const renderer = tools[item.type].renderer;
-            renderer(item.data, appRef.current!, graphicsStoreRef);
+            renderer(item.data as never, appRef.current!, graphicsStoreRef);
         });
         renderAngleBetweenLines(
-            drawingItems.map((item) => item.data),
+            drawingItems
+                .filter((item) => item.type === "line")
+                .map((item) => item.data) as Line[],
             appRef.current!,
             graphicsStoreRef,
             pointNumberRef,

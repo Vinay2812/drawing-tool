@@ -90,7 +90,7 @@ export function renderDistanceOnLine(textGraphics: PIXI.Text, line: Line) {
     textGraphics.y = p.y;
 }
 
-export function renderLineWithMeasurements(
+export function renderLineGraphics(
     line: Line,
     app: PIXI.Application<HTMLCanvasElement>,
     graphicsStoreRef: React.MutableRefObject<
@@ -103,7 +103,7 @@ export function renderLineWithMeasurements(
     if (!lineGraphics) lineGraphics = new SmoothGraphics();
     if (!textGraphics) textGraphics = new PIXI.Text("", textGraphicsOptions);
     // const key = `line-${JSON.stringify(start)}-${JSON.stringify(end)}`;
-    const key = getLineKey(line)
+    const key = getLineKey(line);
     if (!graphicsStoreRef.current[key]) {
         graphicsStoreRef.current[key] = [];
     } else {
@@ -264,7 +264,7 @@ export function renderAngleBetweenLines(
             //     line1.end,
             // )}-${JSON.stringify(line2.end)}`;
             // const key = `angle-${JSON.stringify(commonPoint)}`;
-            const key = getAngleKey(line1, line2)
+            const key = getAngleKey(line1, line2);
 
             // if (!graphicsStoreRef.current[key]) {
             //     graphicsStoreRef.current[key] = [];

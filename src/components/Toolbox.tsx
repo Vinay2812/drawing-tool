@@ -48,7 +48,7 @@ export default function Toolbox(
                             }
                             className={`text-white py-2 px-4 cursor-pointer hover:!outline hover:z-10 outline-purple-700 ${
                                 isActive ? "bg-cyan-600" : "bg-transparent"
-                            } border-gray-500 ${idx > 0 && "border-l"} `}
+                            } border-gray-500 ${idx > 0 && "border-l"}`}
                         >
                             <Icon
                                 className="text-white"
@@ -70,7 +70,7 @@ export default function Toolbox(
                             onClick={() =>
                                 tools[toolName as ToolsType].onClick(props)
                             }
-                            className={`text-white p-2 mx-1 cursor-pointer border-gray-500 outline outline-2 ${!isMobile() && "hover:outline-gray-200 hover:bg-gray-200 hover:rounded-full"} ${
+                            className={`text-white p-2 cursor-pointer border-gray-500 outline outline-2 ${!isMobile() && "hover:outline-gray-200 hover:bg-gray-200 hover:rounded-full"} ${
                                 isActive ? "bg-white" : "bg-transparent"
                             } ${
                                 disabled &&

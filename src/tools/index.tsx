@@ -16,8 +16,8 @@ export type PointerEvents = {
 };
 
 export const tools = {
-    [pencilTool.config.name]: pencilTool.config,
     [selectTool.config.name]: selectTool.config,
+    [pencilTool.config.name]: pencilTool.config,
     [lineTool.config.name]: lineTool.config,
     [circleTool.config.name]: circleTool.config,
     [undoTool.config.name]: undoTool.config,
