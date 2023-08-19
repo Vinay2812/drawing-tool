@@ -4,58 +4,29 @@ import * as circleTool from "./circle";
 import * as clearTool from "./clear";
 import * as undoTool from "./undo";
 import * as redoTool from "./redo";
+import * as pencilTool from "./pencil";
 import { ToolboxProps } from "../components/Toolbox";
+import { PointerEventsProps } from "../components/Canvas";
 export type OnClickArgs = ToolboxProps;
 
-export const tools = {
-    select: {
-        renderer: () => null,
-        icon: selectTool.Icon,
-        events: selectTool.events,
-        cursor: "cursor-move",
-        onClick: selectTool.onClick,
-        isLeft: true,
-    },
-    line: {
-        renderer: lineTool.renderLineWithMeasurements,
-        icon: lineTool.Icon,
-        events: lineTool.events,
-        cursor: "cursor-crosshair",
-        onClick: lineTool.onClick,
-        isLeft: true,
-    },
-    circle: {
-        renderer: circleTool.renderCircleWithMeasurements,
-        icon: circleTool.Icon,
-        events: circleTool.events,
-        cursor: "cursor-crosshair",
-        onClick: circleTool.onClick,
-        isLeft: true,
-    },
-    undo: {
-        renderer: undoTool.renderer,
-        icon: undoTool.icon,
-        events: undoTool.events,
-        cursor: "cursor-pointer",
-        onClick: undoTool.onClick,
-        isLeft: false,
-    },
-    redo: {
-        renderer: redoTool.renderer,
-        icon: redoTool.icon,
-        events: redoTool.events,
-        cursor: "cursor-pointer",
-        onClick: redoTool.onClick,
-        isLeft: false,
-    },
-    clear: {
-        renderer: clearTool.renderer,
-        icon: clearTool.icon,
-        events: clearTool.events,
-        cursor: "cursor-pointer",
-        onClick: clearTool.onClick,
-        isLeft: false,
-    },
+export type PointerEvents = {
+    onDown: (e: MouseEvent, others: PointerEventsProps) => void;
+    onMove: (e: MouseEvent, others: PointerEventsProps) => void;
+    onUp: (e: MouseEvent, others: PointerEventsProps) => void;
 };
-export type Tools = typeof tools;
+
+export const tools = {
+    [pencilTool.config.name]: pencilTool.config,
+    [selectTool.config.name]: selectTool.config,
+    [lineTool.config.name]: lineTool.config,
+    [circleTool.config.name]: circleTool.config,
+    [undoTool.config.name]: undoTool.config,
+    [redoTool.config.name]: redoTool.config,
+    [clearTool.config.name]: clearTool.config,
+};
+
 export type ToolsType = keyof typeof tools;
+
+type Unpacked<T> = T extends (infer U)[] ? U : T;
+const toolsValue = Object.values(tools)
+export type Tools = Record<ToolsType, Unpacked<typeof toolsValue>>

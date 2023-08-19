@@ -24,9 +24,14 @@ export type Circle = {
     end: Point;
 };
 
+export type Pencil = {
+    points: Point[];
+    shapeId: number;
+};
+
 export type DrawingItem = {
     type: ToolsType;
-    data: Line;
+    data: Line | Circle | Pencil;
     id: number;
 };
 
@@ -75,25 +80,26 @@ export default function DrawingArea() {
     const [shapesData, setShapesData] = useState<ShapeData[]>([]);
 
     useEffect(() => {
-        console.log("drawing items", drawingItems)
+        console.log("drawing items", drawingItems);
     }, [drawingItems]);
 
     function handleSubmit() {
         const lines = drawingItems
             .filter((item) => item.type === "line")
-            .map((item) => item.data);
+            .map((item) => item.data) as Line[];
 
         const combinedLines = getShapesData(lines);
         const circles: ShapeData[] = drawingItems
             .filter(({ type }) => type === "circle")
             .map((item) => {
+                const circleData = item.data as Circle;
                 return {
                     type: "circle",
                     data: {
-                        start: item.data.start,
-                        end: item.data.end,
-                        radius: getDistance(item.data.start, item.data.end),
-                        shapeId: item.data.shapeId,
+                        start: circleData.start,
+                        end: circleData.end,
+                        radius: getDistance(circleData.start, circleData.end),
+                        shapeId: circleData.shapeId,
                     } as CircleData,
                 };
             });
@@ -134,7 +140,7 @@ export default function DrawingArea() {
                 className={`w-[${canvasWidth - 20}px] h-[${
                     canvasHeight - 1
                 }px] ${
-                    tools[activeTool].cursor ?? "cursor-pointer"
+                    tools[activeTool].cursor
                 } bg-white outline outline-1 outline-gray-400 overflow-clip`}
             />
             <Canvas

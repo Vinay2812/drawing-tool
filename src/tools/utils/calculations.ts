@@ -293,7 +293,6 @@ export function getPointsAppearingOnce(points: Point[]): Point[] {
             result.push({ x, y });
         }
     }
-    console.log("solo points", result);
     return result;
 }
 
@@ -314,4 +313,15 @@ export function areSameLines(line1: Line, line2: Line) {
         (isSamePoint(line1.start, line2.end) &&
             isSamePoint(line1.end, line2.start))
     );
+}
+
+export function getLineFromLines(line: Line, lines: Line[]) {
+    return lines.find((line1) => {
+        const line2 = {
+            end: line1.start,
+            start: line1.end,
+            shapeId: line1.shapeId,
+        };
+        return areSameLines(line1, line) || areSameLines(line2, line);
+    });
 }

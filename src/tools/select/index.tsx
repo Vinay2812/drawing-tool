@@ -1,8 +1,10 @@
-import { HTMLAttributes } from "react";
-import { OnClickArgs } from "..";
-
 /* eslint-disable react-refresh/only-export-components */
-export * as events from "./events";
+import { HTMLAttributes } from "react";
+import { OnClickArgs, PointerEvents } from "..";
+
+export const toolName = "select";
+export const renderer = () => {};
+import * as events from "./events";
 export const Icon = (props: HTMLAttributes<SVGElement>) => (
     <svg
         {...props}
@@ -12,9 +14,9 @@ export const Icon = (props: HTMLAttributes<SVGElement>) => (
         viewBox="0 0 24 24"
         fill="none"
         stroke="black"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
     >
         <path d="M22 14a8 8 0 0 1-8 8" />
         <path d="M18 11v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
@@ -26,4 +28,17 @@ export const Icon = (props: HTMLAttributes<SVGElement>) => (
 
 export const onClick = (args: OnClickArgs) => {
     args.setActiveTool("select");
-}
+};
+export const isLeft = true;
+export const cursor = "cursor-move";
+
+export const config = {
+    name: toolName as "select",
+    renderer,
+    events: events as PointerEvents,
+    Icon,
+    onClick,
+    isLeft,
+    cursor,
+};
+export type SelectConfig = typeof config;

@@ -1,9 +1,11 @@
-import { HTMLAttributes } from "react";
-import { OnClickArgs } from "..";
-
 /* eslint-disable react-refresh/only-export-components */
-export * from "./renderers";
-export * as events from "./events";
+import { HTMLAttributes } from "react";
+import { OnClickArgs, PointerEvents } from "..";
+import { renderLineWithMeasurements } from "./renderers";
+
+export const toolName = "line";
+export const renderer = renderLineWithMeasurements;
+import * as events from "./events";
 export const Icon = (props: HTMLAttributes<SVGElement>) => (
     <svg height="24" width="24" {...props}>
         <circle cx="5" cy="5" r="1.5" fill={props.style?.stroke ?? "none"} />
@@ -19,7 +21,21 @@ export const Icon = (props: HTMLAttributes<SVGElement>) => (
         />
     </svg>
 );
-
 export const onClick = (args: OnClickArgs) => {
     args.setActiveTool("line");
-}
+};
+export const isLeft = true;
+export const cursor = "cursor-crosshair";
+
+export const config = {
+    name: toolName as "line",
+    renderer,
+    events: events as PointerEvents,
+    Icon,
+    onClick,
+    isLeft,
+    cursor,
+};
+export type LineConfig = typeof config;
+
+export * from "./renderers";

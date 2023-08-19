@@ -27,7 +27,6 @@ export default function Toolbox(
     const rightTools = Object.entries(tools).filter((tool) => {
         return !tool[1].isLeft;
     });
-
     function isToolDisabled(toolName: ToolsType) {
         const { undoItems, drawingItems } = props;
         if (drawingItems.length === 0 && undoItems.length === 0) return true;
@@ -39,7 +38,7 @@ export default function Toolbox(
         <div {...props}>
             <div className="border border-gray-500 flex">
                 {leftTools.map(([toolName, tool], idx) => {
-                    const Icon = tool.icon;
+                    const Icon = tool.Icon;
                     const isActive = props.activeTool === toolName;
                     return (
                         <button
@@ -61,7 +60,7 @@ export default function Toolbox(
             </div>
             <div className="flex gap-2">
                 {rightTools.map(([toolName, tool]) => {
-                    const Icon = tool.icon;
+                    const Icon = tool.Icon;
                     const isActive = props.activeTool === toolName;
                     const disabled = isToolDisabled(toolName as ToolsType);
                     return (

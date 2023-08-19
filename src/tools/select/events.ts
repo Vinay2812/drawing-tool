@@ -1,7 +1,7 @@
 import { PointerEventsProps } from "./../../components/Canvas";
 import * as PIXI from "pixi.js";
 import { GRID_UNIT } from "../utils/config";
-import { type Line, type Point } from "../../components/DrawingArea";
+import { type Line } from "../../components/DrawingArea";
 import {
     getClosestPoint,
     getPointerPosition,
@@ -9,16 +9,17 @@ import {
     isSamePoint,
     areSameLines,
     isPointAppearingOnce,
+    getLineFromLines,
 } from "../utils/calculations";
 import {
     renderLineWithMeasurements,
     renderAngleBetweenLines,
 } from "../line/renderers";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
+import { getAngleKey, getLineKey } from "../utils/keys";
 
 export function removeAngleGraphics(
     lines: Line[],
-    startPoint: Point,
     removingLine: Line,
     app: PIXI.Application<HTMLCanvasElement>,
     graphicsStoreRef: React.MutableRefObject<
@@ -27,35 +28,14 @@ export function removeAngleGraphics(
 ) {
     for (const line of lines) {
         if (areSameLines(line, removingLine)) continue;
-        if (isSamePoint(line.start, startPoint)) {
-            const key1 = `angle-${JSON.stringify(startPoint)}-${JSON.stringify(
-                removingLine.end,
-            )}-${JSON.stringify(line.end)}`;
-            const key2 = `angle-${JSON.stringify(startPoint)}-${JSON.stringify(
-                line.end,
-            )}-${JSON.stringify(removingLine.end)}`;
-
-            graphicsStoreRef.current[key1]?.forEach((g) =>
-                app.stage.removeChild(g),
-            );
-            graphicsStoreRef.current[key2]?.forEach((g) =>
-                app.stage.removeChild(g),
-            );
-        } else if (isSamePoint(line.end, startPoint)) {
-            const key1 = `angle-${JSON.stringify(startPoint)}-${JSON.stringify(
-                removingLine.end,
-            )}-${JSON.stringify(line.start)}`;
-            const key2 = `angle-${JSON.stringify(startPoint)}-${JSON.stringify(
-                line.start,
-            )}-${JSON.stringify(removingLine.end)}`;
-
-            graphicsStoreRef.current[key1]?.forEach((g) =>
-                app.stage.removeChild(g),
-            );
-            graphicsStoreRef.current[key2]?.forEach((g) =>
-                app.stage.removeChild(g),
-            );
-        }
+        const key1: string = getAngleKey(line, removingLine);
+        const key2: string = getAngleKey(removingLine, line);
+        graphicsStoreRef.current[key1]?.forEach((g) =>
+            app.stage.removeChild(g),
+        );
+        graphicsStoreRef.current[key2]?.forEach((g) =>
+            app.stage.removeChild(g),
+        );
     }
 }
 
@@ -66,14 +46,8 @@ export function removeLineGraphics(
     >,
     app: PIXI.Application<HTMLCanvasElement>,
 ) {
-    const key1 = `line-${JSON.stringify(line.end)}-${JSON.stringify(
-        line.start,
-    )}`;
-    const key2 = `line-${JSON.stringify(line.start)}-${JSON.stringify(
-        line.end,
-    )}`;
-    graphicsStoreRef.current[key1]?.forEach((g) => app.stage.removeChild(g));
-    graphicsStoreRef.current[key2]?.forEach((g) => app.stage.removeChild(g));
+    const key = getLineKey(line);
+    graphicsStoreRef.current[key]?.forEach((g) => app.stage.removeChild(g));
 }
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
@@ -124,34 +98,37 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     graphics.clear();
     textGraphics.text = "";
     angleTextGraphics.text = "";
-    const removingLine = {
+    const lines = shapes["line"] ?? [];
+    const selectedLine = {
         start: start,
         end: selectedPoint,
+        shapeId: -1,
     };
+    const removingLine = getLineFromLines(selectedLine, lines);
+    if (removingLine) {
+        const newLine: Line = { start, end, shapeId: removingLine.shapeId };
+        renderLineWithMeasurements(
+            newLine,
+            app,
+            graphicsStoreRef,
+            graphics,
+            textGraphics,
+        );
+        const filteredLines = lines.filter(
+            (line) => !areSameLines(line, removingLine),
+        );
+        removeAngleGraphics(lines, removingLine, app, graphicsStoreRef);
+        removeLineGraphics(removingLine, graphicsStoreRef, app);
+        renderAngleBetweenLines(
+            [...filteredLines, newLine],
+            app,
+            graphicsStoreRef,
+            pointNumberRef,
+        );
 
-    // removeAngleGraphics(lines, start, removingLine, app, graphicsStoreRef);
-    renderLineWithMeasurements(
-        { start, end },
-        app,
-        graphicsStoreRef,
-        graphics,
-        textGraphics,
-    );
-    const lines = shapes["line"] ?? [];
-    const filteredLines = lines.filter(
-        (line) => !areSameLines(line, removingLine),
-    );
-    removeAngleGraphics(lines, start, removingLine, app, graphicsStoreRef);
-    removeLineGraphics(removingLine, graphicsStoreRef, app);
-    renderAngleBetweenLines(
-        [...filteredLines, { start, end }],
-        app,
-        graphicsStoreRef,
-        pointNumberRef,
-    );
-
-    app.stage.addChild(textGraphics);
-    app.stage.addChild(graphics);
+        app.stage.addChild(textGraphics);
+        app.stage.addChild(graphics);
+    }
 }
 
 export function onUp(e: MouseEvent, others: PointerEventsProps) {
@@ -176,43 +153,55 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
     angleTextGraphics.text = "";
     const start = startPoint;
     const end = getPointerPosition(e, container);
-    const removingLine = {
+    const selectedLine = {
         start: start,
         end: selectedPoint,
+        shapeId: -1,
     };
     const lines = shapes["line"] ?? [];
-    const filteredLines = lines.filter(
-        (line) => !areSameLines(line, removingLine),
-    );
-    const filteredPoints = getPointsFromLines(filteredLines);
-    const updatedEnd = getClosestPoint(end, filteredPoints, GRID_UNIT / 2);
-
-    const newLine = { start, end: updatedEnd };
-
-    setStartPoint(null);
-    setIsDrawing(false);
-    removeAngleGraphics(lines, start, removingLine, app, graphicsStoreRef);
-    let isNewLine = true;
-    for (const line of lines) {
-        if (
-            !areSameLines(newLine, removingLine) &&
-            areSameLines(line, newLine)
-        ) {
-            isNewLine = false;
-            const pointLabelKey = JSON.stringify(start);
-            graphicsStoreRef.current[pointLabelKey]?.forEach((g) =>
-                app.stage.removeChild(g),
-            );
-            break;
-        }
-    }
-    setDrawingItems((prev) => {
-        const filteredLines = prev.filter(
-            (item) => !areSameLines(item.data, removingLine),
+    const removingLine = getLineFromLines(selectedLine, lines);
+    if (removingLine) {
+        const filteredLines = lines.filter(
+            (line) => !areSameLines(line, removingLine),
         );
-        if (isNewLine) {
-            filteredLines.push({ type: "line", data: newLine });
+        const filteredPoints = getPointsFromLines(filteredLines);
+        const updatedEnd = getClosestPoint(end, filteredPoints, GRID_UNIT / 2);
+
+        const newLine: Line = {
+            start,
+            end: updatedEnd,
+            shapeId: removingLine.shapeId,
+        };
+
+        setStartPoint(null);
+        setIsDrawing(false);
+        removeAngleGraphics(lines, removingLine, app, graphicsStoreRef);
+        let isNewLine = true;
+        for (const line of lines) {
+            if (
+                !areSameLines(newLine, removingLine) &&
+                areSameLines(line, newLine)
+            ) {
+                isNewLine = false;
+                const pointLabelKey = JSON.stringify(start);
+                graphicsStoreRef.current[pointLabelKey]?.forEach((g) =>
+                    app.stage.removeChild(g),
+                );
+                break;
+            }
         }
-        return filteredLines;
-    });
+        setDrawingItems((prev) => {
+            const filteredLines = prev.filter(
+                (item) => !areSameLines(item.data as Line, removingLine),
+            );
+            if (isNewLine) {
+                filteredLines.push({
+                    type: "line",
+                    data: newLine,
+                    id: filteredLines.length,
+                });
+            }
+            return filteredLines;
+        });
+    }
 }
