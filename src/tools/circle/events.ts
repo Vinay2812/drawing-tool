@@ -1,5 +1,9 @@
 import { PointerEventsProps } from "../../components/Canvas";
-import { getClosestPoint, getPointerPosition, getPointsFromLines } from "../utils/calculations";
+import {
+    getClosestPoint,
+    getPointerPosition,
+    getPointsFromLines,
+} from "../utils/calculations";
 import { GRID_UNIT } from "../utils/config";
 import { renderCircleWithMeasurements } from "./renderer";
 
@@ -22,13 +26,15 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         graphicsStoreRef,
         textGraphics,
         graphics,
+        shapes,
     } = others;
     if (!startPoint || !isDrawing) return;
     const end = getPointerPosition(e, container);
     graphics.clear();
     textGraphics.text = "";
+    const shapeId = (shapes["circle"] ?? []).length + 1;
     renderCircleWithMeasurements(
-        { start: startPoint, end },
+        { start: startPoint, end, shapeId },
         app,
         graphicsStoreRef,
         graphics,
@@ -48,6 +54,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         container,
         setStartPoint,
         setDrawingItems,
+        shapes,
     } = others;
     if (!startPoint || !isDrawing) return;
     graphics.clear();
@@ -55,12 +62,13 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
 
     const start = startPoint;
     const end = getPointerPosition(e, container);
-
+    const shapeId = (shapes["circle"] ?? []).length + 1;
     setDrawingItems((prev) => [
         ...prev,
         {
             type: "circle",
-            data: { start, end },
+            id: prev.length + 1,
+            data: { start, end, shapeId },
         },
     ]);
 

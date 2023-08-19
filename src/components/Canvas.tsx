@@ -134,9 +134,9 @@ export default function Canvas({
                 autoDensity: true,
                 resolution: devicePixelRatio ?? 1,
             });
-
+            (globalThis as any).__PIXI_APP__ = appRef.current; // eslint-disable-line
             appRef.current.renderer.render(appRef.current.stage);
-            appRef.current.screen.fit(new PIXI.Rectangle(0, 0, 6000, 8000));
+            // appRef.current.screen.fit(new PIXI.Rectangle(0, 0, 6000, 8000));
             containerRef.current.appendChild(appRef.current.view);
             containerRef.current.scrollTop = 0;
             setTimeout(() => {

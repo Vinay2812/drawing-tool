@@ -13,6 +13,13 @@ export type Point = {
 };
 
 export type Line = {
+    shapeId: number;
+    start: Point;
+    end: Point;
+};
+
+export type Circle = {
+    shapeId: number;
     start: Point;
     end: Point;
 };
@@ -20,6 +27,7 @@ export type Line = {
 export type DrawingItem = {
     type: ToolsType;
     data: Line;
+    id: number;
 };
 
 export type ShapeType = "line" | "circle" | "triangle" | "polygon";
@@ -27,12 +35,10 @@ export type AngleData = {
     degree: number;
     point: Point;
 };
-export type LineData = {
-    start: Point;
-    end: Point;
+export type LineData = Line & {
     distance: number;
 };
-export type CircleData = Line & {
+export type CircleData = Circle & {
     radius: number;
 };
 export type PolygonData = {
@@ -67,10 +73,9 @@ export default function DrawingArea() {
     >({});
     const pointNumberRef = useRef<number>(0);
     const [shapesData, setShapesData] = useState<ShapeData[]>([]);
-    const [historyIdx, setHistoryIdx] = useState(0);
 
     useEffect(() => {
-        setHistoryIdx(drawingItems.length);
+        console.log("drawing items", drawingItems)
     }, [drawingItems]);
 
     function handleSubmit() {
@@ -85,8 +90,10 @@ export default function DrawingArea() {
                 return {
                     type: "circle",
                     data: {
-                        ...item.data,
+                        start: item.data.start,
+                        end: item.data.end,
                         radius: getDistance(item.data.start, item.data.end),
+                        shapeId: item.data.shapeId,
                     } as CircleData,
                 };
             });
@@ -118,8 +125,6 @@ export default function DrawingArea() {
                 graphicsStoreRef={graphicsStoreRef}
                 pointNumberRef={pointNumberRef}
                 appRef={appRef}
-                historyIdx={historyIdx}
-                setHistoryIdx={setHistoryIdx}
                 className={`flex gap-2 justify-between py-4 h-[72px] w-[${
                     canvasWidth - 20
                 }px] bg-white`}

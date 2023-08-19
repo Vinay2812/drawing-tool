@@ -16,8 +16,6 @@ export type ToolboxProps = {
     >;
     pointNumberRef: React.MutableRefObject<number>;
     appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>;
-    historyIdx: number;
-    setHistoryIdx: React.Dispatch<React.SetStateAction<number>>;
 };
 
 export default function Toolbox(

@@ -10,6 +10,7 @@ import {
     renderAngleBetweenLines,
 } from "./renderers";
 import { PointerEventsProps } from "../../components/Canvas";
+import { Line } from "../../components/DrawingArea";
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
     const { container, setStartPoint, setIsDrawing, shapes } = others;
@@ -44,14 +45,14 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     textGraphics.text = "";
     angleTextGraphics.text = "";
     renderLineWithMeasurements(
-        { start, end },
+        { start, end, shapeId: lines.length + 1 },
         app,
         graphicsStoreRef,
         graphics,
         textGraphics,
     );
     renderAngleBetweenLines(
-        [...lines, { start, end }],
+        [...lines, { start, end, shapeId: lines.length + 1 }],
         app,
         graphicsStoreRef,
         pointNumberRef,
@@ -85,8 +86,12 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
     const points = getPointsFromLines(lines);
     const updatedStart = getClosestPoint(start, points, GRID_UNIT / 2);
     const updatedEnd = getClosestPoint(end, points, GRID_UNIT / 2);
-
-    renderNewLine(updatedStart, updatedEnd, setDrawingItems);
+    const line: Line = {
+        start: updatedStart,
+        end: updatedEnd,
+        shapeId: lines.length + 1,
+    };
+    renderNewLine(line, setDrawingItems);
     setStartPoint(null);
     setIsDrawing(false);
 }

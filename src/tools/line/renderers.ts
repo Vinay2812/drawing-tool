@@ -16,7 +16,12 @@ import {
     slope,
     areSameLines,
 } from "../utils/calculations";
-import { GRID_UNIT, LINE_WIDTH, isMobile, textGraphicsOptions } from "../utils/config";
+import {
+    GRID_UNIT,
+    LINE_WIDTH,
+    isMobile,
+    textGraphicsOptions,
+} from "../utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 
 export function removeGraphicsFromStore(
@@ -67,7 +72,7 @@ export function renderDistanceOnLine(textGraphics: PIXI.Text, line: Line) {
     // const textWidth =
     let p1 = start;
     let p2 = end;
-    let gap = GRID_UNIT / (isMobile() ?  3.5 : 2) + LINE_WIDTH * 1.2;
+    let gap = GRID_UNIT / (isMobile() ? 3.5 : 2) + LINE_WIDTH * 1.2;
 
     if ((p2.x < p1.x && p2.y < p1.y) || (p2.x < p1.x && p2.y > p1.y)) {
         p1 = end;
@@ -93,7 +98,7 @@ export function renderLineWithMeasurements(
     lineGraphics?: SmoothGraphics,
     textGraphics?: PIXI.Text,
 ) {
-    const { start, end } = line;
+    const { start, end, shapeId } = line;
     if (!lineGraphics) lineGraphics = new SmoothGraphics();
     if (!textGraphics) textGraphics = new PIXI.Text("", textGraphicsOptions);
     const key = `line-${JSON.stringify(start)}-${JSON.stringify(end)}`;
@@ -107,9 +112,9 @@ export function renderLineWithMeasurements(
     }
     graphicsStoreRef.current[key].push(lineGraphics);
     graphicsStoreRef.current[key].push(textGraphics);
-    renderLine(lineGraphics, { start, end }, "red");
+    renderLine(lineGraphics, { start, end, shapeId }, "red");
     // const textGraphics = new PIXI.Text("", textGraphicsOptions);
-    renderDistanceOnLine(textGraphics, { start, end });
+    renderDistanceOnLine(textGraphics, { start, end, shapeId });
     app.stage.addChild(lineGraphics);
     app.stage.addChild(textGraphics);
 }
@@ -214,12 +219,14 @@ export function renderAngleBetweenLines(
             }
 
             line1 = {
+                shapeId: line1.shapeId,
                 start: commonPoint,
                 end: isSamePoint(commonPoint, line1.start)
                     ? line1.end
                     : line1.start,
             };
             line2 = {
+                shapeId: line2.shapeId,
                 start: commonPoint,
                 end: isSamePoint(commonPoint, line2.start)
                     ? line2.end
@@ -254,7 +261,7 @@ export function renderAngleBetweenLines(
             // const key = `angle-${JSON.stringify(commonPoint)}-${JSON.stringify(
             //     line1.end,
             // )}-${JSON.stringify(line2.end)}`;
-            const key = `angle-${JSON.stringify(commonPoint)}`
+            const key = `angle-${JSON.stringify(commonPoint)}`;
 
             // if (!graphicsStoreRef.current[key]) {
             //     graphicsStoreRef.current[key] = [];
@@ -262,8 +269,10 @@ export function renderAngleBetweenLines(
             app.stage.addChild(g);
             app.stage.addChild(atg);
 
-            graphicsStoreRef.current[key]?.forEach((g) => app.stage.removeChild(g));
-            graphicsStoreRef.current[key] = []
+            graphicsStoreRef.current[key]?.forEach((g) =>
+                app.stage.removeChild(g),
+            );
+            graphicsStoreRef.current[key] = [];
 
             // app.stage.addChild(g);
             // app.stage.addChild(atg);
@@ -274,20 +283,24 @@ export function renderAngleBetweenLines(
 }
 
 export function renderNewLine(
-    start: Point,
-    end: Point,
+    line: Line,
     setDrawingItems: (value: React.SetStateAction<DrawingItem[]>) => void,
 ) {
+    const { start, end, shapeId } = line;
     if (!isSamePoint(start, end)) {
-        setDrawingItems((prev) => [
-            ...prev,
-            {
-                type: "line",
-                data: {
-                    start,
-                    end,
+        setDrawingItems((prev) => {
+            return [
+                ...prev,
+                {
+                    id: prev.length + 1,
+                    type: "line",
+                    data: {
+                        shapeId,
+                        start,
+                        end,
+                    },
                 },
-            },
-        ]);
+            ];
+        });
     }
 }
