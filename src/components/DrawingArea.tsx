@@ -154,8 +154,9 @@ export default function DrawingArea() {
                 setUndoItems={setUndoItems}
             />
             <button
-                className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4"
+                className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4 disabled:bg-red-300 disabled:cursor-not-allowed"
                 onClick={handleSubmit}
+                disabled={!drawingItems.length}
             >
                 Submit
             </button>

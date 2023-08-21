@@ -1,6 +1,7 @@
 import { GRID_UNIT } from "../utils/config";
 import {
     getClosestPoint,
+    getLineFromLines,
     getPointerPosition,
     getPointsFromLines,
 } from "../utils/calculations";
@@ -44,15 +45,18 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     graphics.clear();
     textGraphics.text = "";
     angleTextGraphics.text = "";
+    const line: Line = { start, end, shapeId: lines.length + 1 }
+    const lineExist = getLineFromLines(line, lines)
+    if (lineExist) return;
     renderLineGraphics(
-        { start, end, shapeId: lines.length + 1 },
+        line,
         app,
         graphicsStoreRef,
         graphics,
         textGraphics,
     );
     renderAngleBetweenLines(
-        [...lines, { start, end, shapeId: lines.length + 1 }],
+        [...lines, line],
         app,
         graphicsStoreRef,
         pointNumberRef,
@@ -76,7 +80,6 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
     } = others;
     if (!startPoint || !isDrawing) return;
     graphics.clear();
-
     textGraphics.text = "";
     angleTextGraphics.text = "";
 
@@ -91,7 +94,9 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         end: updatedEnd,
         shapeId: lines.length + 1,
     };
-    renderNewLine(line, setDrawingItems);
+    const lineExist = getLineFromLines(line, lines)
+    if (!lineExist)
+        renderNewLine(line, setDrawingItems);
     setStartPoint(null);
     setIsDrawing(false);
 }

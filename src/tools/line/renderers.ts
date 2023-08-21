@@ -8,13 +8,14 @@ import {
     findParallelogramFourthPoint,
     findPointAtDistance,
     getAngleBetweenLines,
-    getCommonPoint,
     getDistance,
     getLabelPosition,
     isSamePoint,
     roundupNumber,
     slope,
-    areSameLines,
+    getCommonPointsMap,
+    getLineFromLines,
+    getPointsSortedInClockwise,
 } from "../utils/calculations";
 import {
     GRID_UNIT,
@@ -23,7 +24,7 @@ import {
     textGraphicsOptions,
 } from "../utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
-import { getAngleKey, getLineKey } from "../utils/keys";
+import { getAngleKey, getLineKey, getPointFromPointKey } from "../utils/keys";
 
 export function removeGraphicsFromStore(
     key: string,
@@ -165,8 +166,8 @@ function renderAngleGraphics(
     const line2Length = getDistance(line2.start, line2.end);
 
     const minLength = Math.min(line1Length, line2Length);
-
     const gap = Math.min(minLength, GRID_UNIT) * (isMobile() ? 0.4 : 0.6);
+
     const controlPointFactor = 1.5;
 
     const arcStartPoint = findPointAtDistance(line1, gap);
@@ -207,40 +208,63 @@ export function renderAngleBetweenLines(
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
     pointNumberRef: React.MutableRefObject<number>,
+    graphics?: SmoothGraphics,
+    angleTextGraphics?: PIXI.Text,
 ) {
-    for (let i = 0; i < lines.length; i++) {
-        for (let j = i + 1; j < lines.length; j++) {
-            let line1 = lines[i];
-            let line2 = lines[j];
-            if (areSameLines(line1, line2)) {
-                continue;
-            }
-            const commonPoint = getCommonPoint(line1, line2);
-            if (!commonPoint) {
-                continue;
-            }
-
+    const commonPointMap = getCommonPointsMap(lines);
+    const angleGraphicsKeys = Object.keys(graphicsStoreRef.current).filter(
+        (key) => key.startsWith("angle"),
+    );
+    angleGraphicsKeys.forEach((key) => {
+        graphicsStoreRef.current[key].forEach((g) => app.stage.removeChild(g));
+    });
+    for (const [key, endPoints] of commonPointMap.entries()) {
+        if (endPoints.length < 2) {
+            continue;
+        }
+        console.clear();
+        const commonPoint = getPointFromPointKey(key);
+        const sortedPoints = getPointsSortedInClockwise(endPoints, commonPoint);
+        const n = sortedPoints.length;
+        let totalAngleSum = 0;
+        let largestAngleKey = "";
+        let largestAngle = 120;
+        for (let i = 1; i < n; i++) {
+            const endPoint1 = sortedPoints[(i - 1 + n) % n];
+            const endPoint2 = sortedPoints[i % n];
+            let line1 = {
+                start: commonPoint,
+                end: endPoint1,
+                shapeId: -1,
+            };
+            let line2 = {
+                start: commonPoint,
+                end: endPoint2,
+                shapeId: -1,
+            };
+            line1 = getLineFromLines(line1, lines)!;
+            line2 = getLineFromLines(line2, lines)!;
+            if (!line1 || !line2) continue;
             line1 = {
                 shapeId: line1.shapeId,
                 start: commonPoint,
-                end: isSamePoint(commonPoint, line1.start)
-                    ? line1.end
-                    : line1.start,
-            };
+                end: endPoint1,
+            } as Line;
             line2 = {
                 shapeId: line2.shapeId,
                 start: commonPoint,
-                end: isSamePoint(commonPoint, line2.start)
-                    ? line2.end
-                    : line2.start,
-            };
+                end: endPoint2,
+            } as Line;
 
             const angleDegrees = getAngleBetweenLines(line1, line2);
             if (angleDegrees === -1) {
                 continue;
             }
-            const g = new SmoothGraphics();
-            const atg = new PIXI.Text("", textGraphicsOptions);
+
+            totalAngleSum += angleDegrees;
+            const g = graphics ?? new SmoothGraphics();
+            const atg =
+                angleTextGraphics ?? new PIXI.Text("", textGraphicsOptions);
 
             renderAngleGraphics(
                 line1,
@@ -260,29 +284,85 @@ export function renderAngleBetweenLines(
                 pointNumberRef,
             );
 
-            // const key = `angle-${JSON.stringify(commonPoint)}-${JSON.stringify(
-            //     line1.end,
-            // )}-${JSON.stringify(line2.end)}`;
-            // const key = `angle-${JSON.stringify(commonPoint)}`;
-            const key = getAngleKey(line1, line2);
+            // renderPoint(g, line1.end, 3, i % 2 === 0 ? "blue" : "green")
 
-            // if (!graphicsStoreRef.current[key]) {
-            //     graphicsStoreRef.current[key] = [];
-            // }
+            const key = getAngleKey(line1, line2);
             app.stage.addChild(g);
             app.stage.addChild(atg);
+            graphicsStoreRef.current[key] = [g, atg];
+            // console.log("visited", line1.shapeId, line2.shapeId);
+            if (angleDegrees > largestAngle) {
+                largestAngle = angleDegrees;
+                largestAngleKey = key;
+            }
+        }
 
-            graphicsStoreRef.current[key]?.forEach((g) =>
+        if (n > 2 && largestAngleKey.length) {
+            graphicsStoreRef.current[largestAngleKey].forEach((g) =>
                 app.stage.removeChild(g),
             );
-            graphicsStoreRef.current[key] = [];
-
-            // app.stage.addChild(g);
-            // app.stage.addChild(atg);
-            graphicsStoreRef.current[key].push(g);
-            graphicsStoreRef.current[key].push(atg);
-            // break;
         }
+
+        if (totalAngleSum > 180) {
+            const endPoint1 = sortedPoints[n - 1];
+            const endPoint2 = sortedPoints[0];
+            let line1 = {
+                start: commonPoint,
+                end: endPoint1,
+                shapeId: -1,
+            };
+            let line2 = {
+                start: commonPoint,
+                end: endPoint2,
+                shapeId: -1,
+            };
+            line1 = getLineFromLines(line1, lines)!;
+            line2 = getLineFromLines(line2, lines)!;
+            if (!line1 || !line2) continue;
+            line1 = {
+                shapeId: line1.shapeId,
+                start: commonPoint,
+                end: endPoint1,
+            } as Line;
+            line2 = {
+                shapeId: line2.shapeId,
+                start: commonPoint,
+                end: endPoint2,
+            } as Line;
+
+            const angleDegrees = getAngleBetweenLines(line1, line2);
+            if (angleDegrees === -1) {
+                continue;
+            }
+            const g = graphics ?? new SmoothGraphics();
+            const atg =
+                angleTextGraphics ?? new PIXI.Text("", textGraphicsOptions);
+
+            renderAngleGraphics(
+                line1,
+                line2,
+                commonPoint,
+                angleDegrees,
+                g,
+                atg,
+            );
+
+            renderPointLabel(
+                line1,
+                line2,
+                commonPoint,
+                app,
+                graphicsStoreRef,
+                pointNumberRef,
+            );
+
+            const key = getAngleKey(line1, line2);
+            app.stage.addChild(g);
+            app.stage.addChild(atg);
+            graphicsStoreRef.current[key] = [g, atg];
+            // console.log("visited", line1.shapeId, line2.shapeId);
+        }
+        
     }
 }
 

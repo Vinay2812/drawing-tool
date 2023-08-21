@@ -1,4 +1,5 @@
 import type { Point, Line } from "../../components/DrawingArea";
+import { getPointKey } from "./keys";
 
 export function isSamePoint(start: Point, end: Point) {
     return start.x === end.x && start.y === end.y;
@@ -253,25 +254,6 @@ export function getPointsFromLines(lines: Line[]) {
     return lines.flatMap((line) => [line.start, line.end]);
 }
 
-export function getPointNamePosition(
-    point1: Point,
-    point2: Point,
-    gap: number,
-) {
-    const slope = (point2.y - point1.y) / (point2.x - point1.x);
-
-    const deltaX = gap / Math.sqrt(1 + slope * slope);
-    const deltaY = slope * deltaX;
-
-    const directionX = point2.x > point1.x ? -1 : 1;
-    const directionY = point2.y > point1.y ? -1 : 1;
-
-    const newX = point2.x + directionX * deltaX;
-    const newY = point2.y + directionY * deltaY;
-
-    return { x: newX, y: newY };
-}
-
 export function getPointsAppearingOnce(points: Point[]): Point[] {
     const pointCountMap: Record<string, number> = {};
     // Count the occurrences of each point
@@ -322,6 +304,119 @@ export function getLineFromLines(line: Line, lines: Line[]) {
             start: line1.end,
             shapeId: line1.shapeId,
         };
-        return areSameLines(line1, line) || areSameLines(line2, line);
+        const same = areSameLines(line1, line) || areSameLines(line2, line);
+        return same;
     });
+}
+
+export function getCommonPointsMap(lines: Line[]) {
+    const commonPointMap = new Map<string, Point[]>();
+
+    for (const line of lines) {
+        const { start, end } = line;
+        const key1 = getPointKey(start);
+        const key2 = getPointKey(end);
+        const e1 = commonPointMap.get(key1) ?? [];
+        commonPointMap.set(key1, [...e1, { x: end.x, y: end.y }]);
+        const e2 = commonPointMap.get(key2) ?? [];
+        commonPointMap.set(key2, [...e2, { x: start.x, y: start.y }]);
+    }
+    return commonPointMap;
+}
+
+export function getCenterPointOfPoints(points: Point[]) {
+    let x = 0,
+        y = 0;
+    const n = points.length;
+
+    for (const p of points) {
+        x += p.x;
+        y += p.y;
+    }
+    return { x: x / n, y: y / n };
+}
+
+export function getPointsSortedInClockwise(
+    points: Point[],
+    commonPoint: Point,
+) {
+    function calculateDet(a: Point, b: Point): Point {
+        return { x: a.x - b.x, y: a.y - b.y };
+    }
+
+    function calculateCrossProduct(a: Point, b: Point): number {
+        return a.x * b.y - a.y * b.x;
+    }
+
+    function angleSortComparator(
+        origin: Point,
+        reference: Point,
+        a: Point,
+        b: Point,
+    ): boolean {
+        const dReference = calculateDet(reference, origin);
+        const da = calculateDet(a, origin);
+        const db = calculateDet(b, origin);
+
+        const detB = calculateCrossProduct(dReference, db);
+
+        if (detB === 0 && db.x * dReference.x + db.y * dReference.y >= 0) {
+            return false;
+        }
+
+        const detA = calculateCrossProduct(dReference, da);
+
+        if (detA === 0 && da.x * dReference.x + da.y * dReference.y >= 0) {
+            return true;
+        }
+
+        if (detA * detB >= 0) {
+            return calculateCrossProduct(da, db) > 0;
+        }
+
+        return detA > 0;
+    }
+
+    points.sort((a, b) =>
+        angleSortComparator(
+            commonPoint,
+            { x: commonPoint.x + 1, y: commonPoint.y + 1 },
+            a,
+            b,
+        )
+            ? -1
+            : 1,
+    );
+    return points;
+    // const leftPoints: Point[] = [];
+    // const rightPoints: Point[] = [];
+    // const center = getCenterPointOfPoints(points)
+    // for (const point of points) {
+    //     if (point.x < commonPoint.x) {
+    //         leftPoints.push(point);
+    //     } else {
+    //         rightPoints.push(point);
+    //     }
+    // }
+    // leftPoints.sort((a, b) =>
+    //     angleSortComparator(
+    //         commonPoint,
+    //         { x: commonPoint.x + 1, y: commonPoint.y + 1 },
+    //         a,
+    //         b,
+    //     )
+    //         ? 1
+    //         : -1,
+    // );
+    // rightPoints.sort((a, b) =>
+    //     angleSortComparator(
+    //         commonPoint,
+    //         { x: commonPoint.x - 1, y: commonPoint.y + 1 },
+    //         a,
+    //         b,
+    //     )
+    //         ? -1
+    //         : 1,
+    // );
+    // return [...leftPoints, ...rightPoints];
 }
