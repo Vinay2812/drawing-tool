@@ -1,4 +1,5 @@
 import { PointerEventsProps } from "../../components/Canvas";
+import { Circle } from "../../components/DrawingArea";
 import {
     getClosestPoint,
     getPointerPosition,
@@ -11,7 +12,7 @@ export function onDown(e: MouseEvent, others: PointerEventsProps) {
     const { container, setStartPoint, setIsDrawing, shapes } = others;
     const start = getPointerPosition(e, container);
     const lines = shapes["circle"] ?? [];
-    const points = getPointsFromLines(lines);
+    const points = getPointsFromLines(lines as Circle[]);
     const closestPoint = getClosestPoint(start, points, GRID_UNIT / 2);
     setStartPoint(closestPoint);
     setIsDrawing(true);
