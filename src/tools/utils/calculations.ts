@@ -1,5 +1,7 @@
+import { Viewport } from "pixi-viewport";
 import type { Point, Line } from "../../components/DrawingArea";
 import { getPointKey } from "./keys";
+// import * as PIXI from "pixi.js";
 
 export function isSamePoint(start: Point, end: Point) {
     return start.x === end.x && start.y === end.y;
@@ -234,18 +236,29 @@ export function getLabelPosition(
     return { x, y };
 }
 
-export function getPointerPosition(event: MouseEvent, container?: HTMLElement) {
+export function getPointerPosition(
+    event: MouseEvent,
+    container: HTMLElement,
+    viewport: Viewport,
+) {
     const pos = { x: 0, y: 0 };
-    if (container) {
-        // Get the position and size of the component on the page.
-        const holderOffset = container.getBoundingClientRect();
-        const containerScrollX = container.scrollLeft;
-        const containerScrollY = container.scrollTop;
 
-        // Calculate the adjusted pointer position
-        pos.x = event.clientX - holderOffset.x + containerScrollX;
-        pos.y = event.clientY - holderOffset.y + containerScrollY;
-    }
+    // Get the position and size of the container's view on the page
+    const containerOffset = container.getBoundingClientRect();
+    const containerScrollX = container.scrollLeft;
+    const containerScrollY = container.scrollTop;
+
+    // Calculate the adjusted pointer position relative to the container's view
+    const pointerX = event.clientX - containerOffset.x + containerScrollX;
+    const pointerY = event.clientY - containerOffset.y + containerScrollY;
+
+    // Get the global position of the pointer within the viewport
+    const globalPos = viewport.toWorld(pointerX, pointerY);
+
+    // Assign the global position to the pos object
+    pos.x = globalPos.x;
+    pos.y = globalPos.y;
+
     return pos;
 }
 

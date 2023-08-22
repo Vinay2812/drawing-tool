@@ -5,6 +5,7 @@ import { tools, type ToolsType } from "../tools";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getShapesData } from "../utils/shapes";
 import { getDistance } from "../tools/utils/calculations";
+import { Viewport } from "pixi-viewport";
 const Canvas = lazy(() => import("./Canvas"));
 
 export type Point = {
@@ -70,6 +71,7 @@ export type ShapeData =
 
 export default function DrawingArea() {
     const appRef = useRef<PIXI.Application<HTMLCanvasElement> | null>(null);
+    const viewportRef = useRef<Viewport | null>(null);
     const [activeTool, setActiveTool] = useState<ToolsType>("select");
     const [drawingItems, setDrawingItems] = useState<DrawingItem[]>([]);
     const [undoItems, setUndoItems] = useState<DrawingItem[]>([]);
@@ -78,10 +80,7 @@ export default function DrawingArea() {
     >({});
     const pointNumberRef = useRef<number>(0);
     const [shapesData, setShapesData] = useState<ShapeData[]>([]);
-
-    useEffect(() => {
-        console.log("drawing items", drawingItems);
-    }, [drawingItems]);
+    const gridGraphics = new SmoothGraphics();
 
     function handleSubmit() {
         const lines = drawingItems
@@ -131,6 +130,7 @@ export default function DrawingArea() {
                 graphicsStoreRef={graphicsStoreRef}
                 pointNumberRef={pointNumberRef}
                 appRef={appRef}
+                viewportRef={viewportRef}
                 className={`flex gap-2 justify-between py-4 h-[72px] w-[${
                     canvasWidth - 20
                 }px] bg-white`}
@@ -141,8 +141,52 @@ export default function DrawingArea() {
                     canvasHeight - 1
                 }px] ${
                     tools[activeTool].cursor
-                } bg-white outline outline-1 outline-gray-400 overflow-clip`}
-            />
+                } bg-white outline outline-1 outline-gray-400 overflow-clip relative`}
+            >
+                <div className="absolute right-2 top-2 flex flex-col gap-1">
+                    <button
+                        className=" bg-slate-300 p-2 hover:bg-slate-200"
+                        id="zoom-in"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" x2="16.65" y1="21" y2="16.65" />
+                            <line x1="11" x2="11" y1="8" y2="14" />
+                            <line x1="8" x2="14" y1="11" y2="11" />
+                        </svg>
+                    </button>
+                    <button
+                        className="bg-slate-300 p-2 hover:bg-slate-200"
+                    id="zoom-out"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" x2="16.65" y1="21" y2="16.65" />
+                            <line x1="8" x2="14" y1="11" y2="11" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
             <Canvas
                 activeTool={activeTool}
                 // drawingItems={drawingItemsRef.current}
@@ -151,7 +195,9 @@ export default function DrawingArea() {
                 graphicsStoreRef={graphicsStoreRef}
                 pointNumberRef={pointNumberRef}
                 appRef={appRef}
+                viewportRef={viewportRef}
                 setUndoItems={setUndoItems}
+                gridGraphics={gridGraphics}
             />
             <button
                 className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4 disabled:bg-red-300 disabled:cursor-not-allowed"

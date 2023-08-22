@@ -2,14 +2,11 @@ import * as PIXI from "pixi.js";
 import { ToolsType, tools } from "../tools";
 import { Circle, DrawingItem, Line, Pencil, Point } from "./DrawingArea";
 import { useEffect, useRef } from "react";
-import { renderCanvasGrid, renderGridUnit } from "./renderGrid";
-import {
-    textGraphicsOptions,
-    windowHeight,
-    windowWidth,
-} from "../tools/utils/config";
+import { renderCanvasGrid } from "./renderGrid";
+import { textGraphicsOptions } from "../tools/utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { renderAngleBetweenLines } from "../tools/line";
+import { Viewport } from "pixi-viewport";
 
 export type Shape = Line | Circle | Pencil;
 
@@ -37,6 +34,7 @@ export type PointerEventsProps = {
         y: number;
     }>;
     pencilPointsRef: React.MutableRefObject<Point[]>;
+    viewport: Viewport;
 };
 
 type Props = {
@@ -49,6 +47,8 @@ type Props = {
     pointNumberRef: React.MutableRefObject<number>;
     appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>;
     setUndoItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
+    viewportRef: React.MutableRefObject<Viewport | null>;
+    gridGraphics: SmoothGraphics;
 };
 
 export default function Canvas({
@@ -59,9 +59,10 @@ export default function Canvas({
     pointNumberRef,
     appRef,
     setUndoItems,
+    viewportRef,
+    gridGraphics,
 }: Props) {
     const containerRef = useRef<HTMLElement | null>(null);
-
     const startPoint = useRef<Point | null>(null);
     const setStartPoint = (point: Point | null) => (startPoint.current = point);
     const isDrawing = useRef(false);
@@ -75,6 +76,10 @@ export default function Canvas({
     const itemsRef = useRef(drawingItems);
     const lastTouchRef = useRef({ x: 0, y: 0 });
     const pencilPointsRef = useRef<Point[]>([]);
+    const originalWidth = 10000; // Initial width of the world
+    const originalHeight = 10000; // Initial height of the world
+    const maxZoomPercent = 4;
+    const minZoomPercent = 0.5;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getProps = (): PointerEventsProps => {
@@ -83,6 +88,7 @@ export default function Canvas({
             isDrawing: isDrawing.current,
             container: containerRef.current!,
             app: appRef.current!,
+            viewport: viewportRef.current!,
             angleTextGraphics,
             textGraphics,
             graphics,
@@ -96,6 +102,7 @@ export default function Canvas({
             pointNumberRef,
             lastTouchRef,
             pencilPointsRef,
+
             shapes: itemsRef.current.reduce((data, item) => {
                 if (!data[item.type]) {
                     data[item.type] = [];
@@ -122,63 +129,205 @@ export default function Canvas({
         return tools[activeTool].events.onUp(e, props);
     }
 
+    const onResize = () => {
+        appRef.current!.renderer.resize(window.innerWidth, window.innerHeight);
+        viewportRef.current!.resize(window.innerWidth, window.innerHeight);
+    };
+
+    // function addViewportFunctionality() {
+    //     viewportRef
+    //         .current!.pinch({
+    //             noDrag: true,
+    //             factor: 1,
+    //             percent: 1,
+    //             axis: "all",
+    //         })
+    //         .wheel()
+    //         .decelerate();
+    // }
+
+    // function removeViewportFunctionality() {
+    //     viewportRef
+    //         .current!.pinch({
+    //             percent: 0,
+    //             noDrag: true,
+    //         })
+    //         .wheel({
+    //             percent: 0,
+    //         })
+    //         .decelerate();
+    // }
+
+    function renderDrawingItems(drawingItems: DrawingItem[]) {
+        drawingItems.forEach((item) => {
+            const renderer = tools[item.type].renderer;
+            renderer(
+                item.data as never,
+                viewportRef.current!,
+                graphicsStoreRef,
+            );
+        });
+        renderAngleBetweenLines(
+            drawingItems
+                .filter((item) => item.type === "line")
+                .map((item) => item.data) as Line[],
+            viewportRef.current!,
+            graphicsStoreRef,
+            pointNumberRef,
+        );
+    }
+
+    function handleViewPortZoom(
+        gridGraphics: SmoothGraphics,
+        viewport: Viewport,
+        app: PIXI.Application<HTMLCanvasElement>,
+    ) {
+        // gridGraphics.clear();
+        viewport.removeChild(graphics);
+        isDrawing.current = false;
+        pencilPointsRef.current = [];
+        setStartPoint(null);
+        setSelectedPoint(null);
+        const restrictedZoomFactor = Math.min(
+            maxZoomPercent,
+            Math.max(minZoomPercent, viewport.scale.x),
+        );
+
+        // Update the viewport's scale to the restricted zoom factor
+        viewport.setZoom(restrictedZoomFactor);
+
+        renderCanvasGrid(viewport, app, gridGraphics);
+        renderDrawingItems(itemsRef.current);
+    }
+
+    function createSetup() {
+        const container =
+            document.querySelector<HTMLCanvasElement>("#canvas-container");
+        if (!container) {
+            throw Error("Container not found");
+        }
+        const zoomIn = container.querySelector<HTMLButtonElement>("#zoom-in")!;
+        const zoomOut =
+            container.querySelector<HTMLButtonElement>("#zoom-out")!;
+
+        const app = new PIXI.Application<HTMLCanvasElement>({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: "transparent", // Background color
+            backgroundAlpha: 0,
+            antialias: true,
+            autoDensity: true,
+            resolution: devicePixelRatio ?? 1,
+        });
+        container.appendChild(app.view);
+        // const {x, y, width, height} = container.getBoundingClientRect()
+
+        const viewport = new Viewport({
+            worldWidth: originalWidth,
+            worldHeight: originalHeight,
+            screenWidth: window.innerWidth,
+            screenHeight: window.innerHeight,
+            events: app.renderer.events,
+        })
+            .pinch({
+                noDrag: true,
+                factor: 1,
+                percent: 1,
+                axis: "all",
+            })
+            .wheel()
+            .decelerate();
+        // .drag()
+        app.renderer.render(app.stage);
+        app.stage.addChild(viewport);
+        app.ticker.start();
+        containerRef.current = container;
+        appRef.current = app;
+        viewportRef.current = viewport;
+        app.stage.addChild(gridGraphics);
+        viewport.on("zoomed", () => {
+            handleViewPortZoom(
+                gridGraphics,
+                viewportRef.current!,
+                appRef.current!,
+            );
+        });
+        zoomIn.onclick = () => {
+            const newScale = Math.min(
+                viewportRef.current!.scale.x * 1.2,
+                maxZoomPercent,
+            );
+            viewportRef.current!.setZoom(newScale);
+            handleViewPortZoom(
+                gridGraphics,
+                viewportRef.current!,
+                appRef.current!,
+            );
+        };
+        zoomOut.onclick = () => {
+            const newScale = Math.max(
+                viewportRef.current!.scale.x / 1.2,
+                minZoomPercent,
+            );
+            viewportRef.current!.setZoom(newScale);
+            handleViewPortZoom(
+                gridGraphics,
+                viewportRef.current!,
+                appRef.current!,
+            );
+        };
+        setTimeout(() => {
+            if (!app || !containerRef.current) return;
+            renderCanvasGrid(viewport, app, gridGraphics);
+        }, 100);
+    }
+
+    // useEffect(() => {
+    //     if (!viewportRef.current) return;
+        // const viewport = viewportRef.current;
+        // if (activeTool === "select") {
+        //     addViewportFunctionality();
+        // } else {
+        //     removeViewportFunctionality();
+        // }
+    // }, [activeTool]);
+
+    function addEventListeners() {
+        const container = containerRef.current!;
+        if (!container || !appRef.current || !viewportRef.current) return;
+        const viewport = viewportRef.current;
+        viewport.addEventListener("pointerdown", handleOnDown);
+        viewport.addEventListener("pointermove", handleOnMove);
+        viewport.addEventListener("pointerup", handleOnUp);
+        viewport.addEventListener("pointerout", handleOnUp);
+        window.addEventListener("resize", onResize);
+    }
+
+    function removeEventListeners() {
+        const container = containerRef.current!;
+        if (!container || !appRef.current || !viewportRef.current) return;
+        const viewport = viewportRef.current;
+        viewport.removeEventListener("pointerdown", handleOnDown);
+        viewport.removeEventListener("pointermove", handleOnMove);
+        viewport.removeEventListener("pointerup", handleOnUp);
+        viewport.removeEventListener("pointerout", handleOnUp);
+        window.removeEventListener("resize", onResize);
+    }
+
     useEffect(() => {
         if (!appRef.current) {
-            containerRef.current = document.getElementById("canvas-container");
-            if (!containerRef.current) {
-                throw Error("Container not found");
-            }
-            appRef.current = new PIXI.Application<HTMLCanvasElement>({
-                width: windowWidth,
-                height: windowHeight,
-                backgroundColor: "transparent", // Background color
-                backgroundAlpha: 0,
-                antialias: true,
-                autoDensity: true,
-                resolution: devicePixelRatio ?? 1,
-            });
-            (globalThis as any).__PIXI_APP__ = appRef.current; // eslint-disable-line
-            appRef.current.renderer.render(appRef.current.stage);
-            // appRef.current.screen.fit(new PIXI.Rectangle(0, 0, 6000, 8000));
-            containerRef.current.appendChild(appRef.current.view);
-            containerRef.current.scrollTop = 0;
-            setTimeout(() => {
-                if (!appRef.current || !containerRef.current) return;
-                appRef.current.resizeTo = containerRef.current;
-                renderCanvasGrid(appRef.current);
-                renderGridUnit(appRef.current);
-            }, 100);
+            createSetup();
         }
-        const container = containerRef.current!;
-        if (!container || !appRef.current) return;
-        container.addEventListener("pointerdown", handleOnDown);
-        container.addEventListener("pointermove", handleOnMove);
-        container.addEventListener("pointerup", handleOnUp);
-        container.addEventListener("pointerout", handleOnUp);
-
+        addEventListeners();
         return () => {
-            container.removeEventListener("pointerdown", handleOnDown);
-            container.removeEventListener("pointermove", handleOnMove);
-            container.removeEventListener("pointerup", handleOnUp);
-            container.removeEventListener("pointerout", handleOnUp);
+            removeEventListeners();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTool, isDrawing]);
 
     useEffect(() => {
         itemsRef.current = drawingItems;
-        drawingItems.forEach((item) => {
-            const renderer = tools[item.type].renderer;
-            renderer(item.data as never, appRef.current!, graphicsStoreRef);
-        });
-        renderAngleBetweenLines(
-            drawingItems
-                .filter((item) => item.type === "line")
-                .map((item) => item.data) as Line[],
-            appRef.current!,
-            graphicsStoreRef,
-            pointNumberRef,
-        );
+        renderDrawingItems(drawingItems);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [drawingItems, activeTool]);
     return <div></div>;

@@ -113,7 +113,7 @@ export function getShapesData(lines: Line[]) {
         }
     }
 
-    const shapeData: ShapeData[] = result.map((shape) => {
+    const shapeData: ShapeData[] = result.map((shape, idx) => {
         let type: ShapeType;
         switch (shape.length) {
             case 2:
@@ -138,6 +138,7 @@ export function getShapesData(lines: Line[]) {
                         getDistance(start, end) / GRID_UNIT,
                         1,
                     ),
+                    shapeId: idx + 1,
                 } as LineData,
             };
         }
@@ -152,13 +153,13 @@ export function getShapesData(lines: Line[]) {
             const line1: Line = {
                 start: uniquePoints[shape[i - 1]],
                 end: uniquePoints[shape[i]],
-                shapeId: -1
+                shapeId: i,
             };
 
             const line2: Line = {
                 end: uniquePoints[shape[i]],
                 start: uniquePoints[shape[(i + 1) % n]],
-                shapeId: -1
+                shapeId: i + 1,
             };
             // console.log(line1, line2)
 
@@ -169,7 +170,7 @@ export function getShapesData(lines: Line[]) {
                     getDistance(line1.start, line1.end) / GRID_UNIT,
                     1,
                 ),
-                shapeId: -1
+                shapeId: idx + 1,
             });
 
             let angle = roundupNumber(getAngleBetweenLines(line2, line1), 0);

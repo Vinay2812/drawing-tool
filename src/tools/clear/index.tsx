@@ -34,11 +34,11 @@ export const onClick = ({
     setUndoItems,
     graphicsStoreRef,
     pointNumberRef,
-    appRef,
+    viewportRef
 }: OnClickArgs) => {
     setDrawingItems([]);
     setUndoItems([]);
-    resetGraphics(graphicsStoreRef, pointNumberRef, appRef);
+    resetGraphics(graphicsStoreRef, pointNumberRef, viewportRef);
 };
 
 export const isLeft = false;

@@ -32,7 +32,7 @@ export const onClick = (args: OnClickArgs) => {
         setDrawingItems,
         setUndoItems,
         graphicsStoreRef,
-        appRef,
+        viewportRef,
         pointNumberRef,
         drawingItems,
     } = args;
@@ -43,7 +43,7 @@ export const onClick = (args: OnClickArgs) => {
         if (!prev.length) return [];
         return prev.slice(0, prev.length - 1);
     });
-    resetGraphics(graphicsStoreRef, pointNumberRef, appRef);
+    resetGraphics(graphicsStoreRef, pointNumberRef, viewportRef);
 };
 
 export const isLeft = false;

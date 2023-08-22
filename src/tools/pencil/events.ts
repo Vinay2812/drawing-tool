@@ -4,8 +4,8 @@ import { getPointerPosition } from "../utils/calculations";
 import { renderPencilGraphics } from "./renderers";
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
-    const { setIsDrawing, pencilPointsRef, container } = others;
-    pencilPointsRef.current = [getPointerPosition(e, container)];
+    const { setIsDrawing, pencilPointsRef, container, viewport } = others;
+    pencilPointsRef.current = [getPointerPosition(e, container, viewport)];
     setIsDrawing(true);
 }
 
@@ -16,11 +16,11 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         pencilPointsRef,
         shapes,
         graphics,
-        app,
+        viewport,
         graphicsStoreRef,
     } = others;
     if (!isDrawing || !pencilPointsRef.current.length) return;
-    const point = getPointerPosition(e, container);
+    const point = getPointerPosition(e, container, viewport);
     pencilPointsRef.current.push(point);
     const shapeId = (shapes["pencil"]?.length ?? 0) + 1;
     graphics.clear();
@@ -29,7 +29,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
             points: pencilPointsRef.current,
             shapeId,
         },
-        app,
+        viewport,
         graphicsStoreRef,
         graphics,
     );
@@ -43,9 +43,15 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         shapes,
         setDrawingItems,
         isDrawing,
+        viewport,
+        graphics,
     } = others;
-    if (!isDrawing || !pencilPointsRef.current.length) return;
-    const point = getPointerPosition(e, container);
+    if (!isDrawing || !pencilPointsRef.current.length) {
+        graphics.clear();
+        pencilPointsRef.current = [];
+        return;
+    }
+    const point = getPointerPosition(e, container, viewport);
     const shapeId = (shapes["pencil"]?.length ?? 0) + 1;
     setDrawingItems((prev) => {
         const pencil: DrawingItem = {
@@ -56,10 +62,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
                 shapeId: shapeId,
             },
         };
-        return [
-            ...prev,
-            pencil,
-        ];
+        return [...prev, pencil];
     });
     setIsDrawing(false);
 }

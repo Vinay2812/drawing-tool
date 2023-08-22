@@ -4,10 +4,11 @@ import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getPencilKey } from "../utils/keys";
 import { LINE_WIDTH, isMobile } from "../utils/config";
 import { renderPoint } from "../line";
+import { Viewport } from "pixi-viewport";
 
 export function renderPencilGraphics(
     pencil: Pencil,
-    app: PIXI.Application<HTMLCanvasElement>,
+    viewport: Viewport,
     graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
@@ -33,7 +34,7 @@ export function renderPencilGraphics(
         }
     }
     const key = getPencilKey(pencil);
-    graphicsStoreRef.current[key]?.forEach((g) => app.stage.removeChild(g));
+    graphicsStoreRef.current[key]?.forEach((g) => viewport.removeChild(g));
     graphicsStoreRef.current[key] = [g];
-    app.stage.addChild(g);
+    viewport.addChild(g);
 }

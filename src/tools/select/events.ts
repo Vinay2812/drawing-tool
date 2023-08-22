@@ -14,11 +14,12 @@ import {
 import { renderLineGraphics, renderAngleBetweenLines } from "../line/renderers";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getAngleKey, getLineKey } from "../utils/keys";
+import { Viewport } from "pixi-viewport";
 
 export function removeAngleGraphics(
     lines: Line[],
     removingLine: Line,
-    app: PIXI.Application<HTMLCanvasElement>,
+    viewport: Viewport,
     graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
@@ -27,12 +28,8 @@ export function removeAngleGraphics(
         if (areSameLines(line, removingLine)) continue;
         const key1: string = getAngleKey(line, removingLine);
         const key2: string = getAngleKey(removingLine, line);
-        graphicsStoreRef.current[key1]?.forEach((g) =>
-            app.stage.removeChild(g),
-        );
-        graphicsStoreRef.current[key2]?.forEach((g) =>
-            app.stage.removeChild(g),
-        );
+        graphicsStoreRef.current[key1]?.forEach((g) => viewport.removeChild(g));
+        graphicsStoreRef.current[key2]?.forEach((g) => viewport.removeChild(g));
     }
 }
 
@@ -41,20 +38,25 @@ export function removeLineGraphics(
     graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
-    app: PIXI.Application<HTMLCanvasElement>,
+    viewport: Viewport,
 ) {
     const key = getLineKey(line);
-    graphicsStoreRef.current[key]?.forEach((g) => app.stage.removeChild(g));
+    graphicsStoreRef.current[key]?.forEach((g) => viewport.removeChild(g));
 }
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
-    const { container, setStartPoint, setIsDrawing, setSelectedPoint, shapes } =
-        others;
+    const {
+        viewport,
+        setStartPoint,
+        container,
+        setIsDrawing,
+        setSelectedPoint,
+        shapes,
+    } = others;
     const lines = (shapes["line"] ?? []) as Line[];
-    const clickedPoint = getPointerPosition(e, container);
+    const clickedPoint = getPointerPosition(e, container, viewport);
     const points = getPointsFromLines(lines);
     const endPoint = getClosestPoint(clickedPoint, points, GRID_UNIT / 2);
-
     if (isPointAppearingOnce(endPoint, points)) {
         setSelectedPoint(endPoint);
         const clickedLine = lines.find(
@@ -79,8 +81,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     const {
         startPoint,
         isDrawing,
-        container,
-        app,
+        viewport,
         angleTextGraphics,
         textGraphics,
         graphics,
@@ -88,9 +89,12 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         graphicsStoreRef,
         pointNumberRef,
         shapes,
+        container,
     } = others;
-    if (!startPoint || !isDrawing || !selectedPoint) return;
-    const end = getPointerPosition(e, container);
+    if (!startPoint || !isDrawing || !selectedPoint) {
+        return;
+    }
+    const end = getPointerPosition(e, container, viewport);
     const start = startPoint;
     graphics.clear();
     textGraphics.text = "";
@@ -106,7 +110,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         const newLine: Line = { start, end, shapeId: removingLine.shapeId };
         renderLineGraphics(
             newLine,
-            app,
+            viewport,
             graphicsStoreRef,
             graphics,
             textGraphics,
@@ -114,17 +118,17 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         const filteredLines = lines.filter(
             (line) => !areSameLines(line, removingLine),
         );
-        removeAngleGraphics(lines, removingLine, app, graphicsStoreRef);
-        removeLineGraphics(removingLine, graphicsStoreRef, app);
+        removeAngleGraphics(lines, removingLine, viewport, graphicsStoreRef);
+        removeLineGraphics(removingLine, graphicsStoreRef, viewport);
         renderAngleBetweenLines(
             [...filteredLines, newLine],
-            app,
+            viewport,
             graphicsStoreRef,
             pointNumberRef,
         );
 
-        app.stage.addChild(textGraphics);
-        app.stage.addChild(graphics);
+        viewport.addChild(textGraphics);
+        viewport.addChild(graphics);
     }
 }
 
@@ -138,18 +142,18 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         textGraphics,
         graphics,
         setDrawingItems,
-        app,
-        container,
+        viewport,
         graphicsStoreRef,
         setStartPoint,
         shapes,
+        container,
     } = others;
     if (!startPoint || !isDrawing || !selectedPoint) return;
     graphics.clear();
     textGraphics.text = "";
     angleTextGraphics.text = "";
     const start = startPoint;
-    const end = getPointerPosition(e, container);
+    const end = getPointerPosition(e, container, viewport);
     const selectedLine = {
         start: start,
         end: selectedPoint,
@@ -172,7 +176,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
 
         setStartPoint(null);
         setIsDrawing(false);
-        removeAngleGraphics(lines, removingLine, app, graphicsStoreRef);
+        removeAngleGraphics(lines, removingLine, viewport, graphicsStoreRef);
         let isNewLine = true;
         for (const line of lines) {
             if (
@@ -182,7 +186,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
                 isNewLine = false;
                 const pointLabelKey = JSON.stringify(start);
                 graphicsStoreRef.current[pointLabelKey]?.forEach((g) =>
-                    app.stage.removeChild(g),
+                    viewport.removeChild(g),
                 );
                 break;
             }

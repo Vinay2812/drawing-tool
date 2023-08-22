@@ -4,6 +4,7 @@ import { Circle, Point } from "../../components/DrawingArea";
 import { LINE_WIDTH, textGraphicsOptions } from "../utils/config";
 import * as PIXI from "pixi.js";
 import { renderDistanceOnLine, renderLine } from "../line";
+import { Viewport } from "pixi-viewport";
 
 export function renderCircle(
     start: Point,
@@ -22,7 +23,7 @@ export function renderCircle(
 
 export function renderCircleWithMeasurements(
     circle: Circle,
-    app: PIXI.Application<HTMLCanvasElement>,
+    viewport: Viewport,
     graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
@@ -31,21 +32,22 @@ export function renderCircleWithMeasurements(
 ) {
     if (!circleGraphics) circleGraphics = new SmoothGraphics();
     if (!textGraphics) textGraphics = new PIXI.Text("", textGraphicsOptions);
+    textGraphics.resolution = 4;
     const { start, end } = circle;
     const key = `circle-${JSON.stringify(start)}-${JSON.stringify(end)}`;
     if (!graphicsStoreRef.current[key]) {
         graphicsStoreRef.current[key] = [];
     } else {
         graphicsStoreRef.current[key].forEach((item) => {
-            app.stage.removeChild(item);
+            viewport.removeChild(item);
         });
         graphicsStoreRef.current[key] = [];
     }
     graphicsStoreRef.current[key].push(circleGraphics);
     graphicsStoreRef.current[key].push(textGraphics);
     renderCircle(start, end, circleGraphics);
-    renderLine(circleGraphics, circle, "orange")
-    renderDistanceOnLine(textGraphics, circle)
-    app.stage.addChild(circleGraphics);
-    app.stage.addChild(textGraphics);
+    renderLine(circleGraphics, circle, "orange");
+    renderDistanceOnLine(textGraphics, circle);
+    viewport.addChild(circleGraphics);
+    viewport.addChild(textGraphics);
 }

@@ -3,6 +3,7 @@ import { type ToolsType, tools } from "../tools";
 import * as PIXI from "pixi.js";
 import { DrawingItem } from "./DrawingArea";
 import { isMobile } from "../tools/utils/config";
+import { Viewport } from "pixi-viewport";
 
 export type ToolboxProps = {
     activeTool: ToolsType;
@@ -16,6 +17,7 @@ export type ToolboxProps = {
     >;
     pointNumberRef: React.MutableRefObject<number>;
     appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>;
+    viewportRef: React.MutableRefObject<Viewport | null>
 };
 
 export default function Toolbox(

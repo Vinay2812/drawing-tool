@@ -9,8 +9,8 @@ import { GRID_UNIT } from "../utils/config";
 import { renderCircleWithMeasurements } from "./renderer";
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
-    const { container, setStartPoint, setIsDrawing, shapes } = others;
-    const start = getPointerPosition(e, container);
+    const { setStartPoint, setIsDrawing, shapes, viewport, container } = others;
+    const start = getPointerPosition(e, container, viewport);
     const lines = shapes["circle"] ?? [];
     const points = getPointsFromLines(lines as Circle[]);
     const closestPoint = getClosestPoint(start, points, GRID_UNIT / 2);
@@ -22,27 +22,27 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     const {
         startPoint,
         isDrawing,
-        container,
-        app,
+        viewport,
         graphicsStoreRef,
         textGraphics,
         graphics,
         shapes,
+        container,
     } = others;
     if (!startPoint || !isDrawing) return;
-    const end = getPointerPosition(e, container);
+    const end = getPointerPosition(e, container, viewport);
     graphics.clear();
     textGraphics.text = "";
     const shapeId = (shapes["circle"] ?? []).length + 1;
     renderCircleWithMeasurements(
         { start: startPoint, end, shapeId },
-        app,
+        viewport,
         graphicsStoreRef,
         graphics,
         textGraphics,
     );
-    app.stage.addChild(textGraphics);
-    app.stage.addChild(graphics);
+    viewport.addChild(textGraphics);
+    viewport.addChild(graphics);
 }
 
 export function onUp(e: MouseEvent, others: PointerEventsProps) {
@@ -52,17 +52,22 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         setIsDrawing,
         textGraphics,
         graphics,
-        container,
+        viewport,
         setStartPoint,
         setDrawingItems,
         shapes,
+        container,
     } = others;
-    if (!startPoint || !isDrawing) return;
+    if (!startPoint || !isDrawing) {
+        graphics.clear();
+        viewport.removeChild(textGraphics);
+        return;
+    }
     graphics.clear();
     textGraphics.text = "";
 
     const start = startPoint;
-    const end = getPointerPosition(e, container);
+    const end = getPointerPosition(e, container, viewport);
     const shapeId = (shapes["circle"] ?? []).length + 1;
     setDrawingItems((prev) => [
         ...prev,
