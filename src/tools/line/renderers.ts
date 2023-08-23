@@ -24,24 +24,13 @@ import {
     textGraphicsOptions,
 } from "../utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
-import { getAngleKey, getLineKey, getPointFromPointKey } from "../utils/keys";
+import {
+    getAngleKey,
+    getLabelKey,
+    getLineKey,
+    getPointFromPointKey,
+} from "../utils/keys";
 import { Viewport } from "pixi-viewport";
-
-export function removeGraphicsFromStore(
-    key: string,
-    graphicsStoreRef: React.MutableRefObject<
-        Record<string, (SmoothGraphics | PIXI.Text)[]>
-    >,
-    viewport: Viewport,
-) {
-    graphicsStoreRef.current[key]?.forEach((g) => {
-        if (g instanceof PIXI.Text) {
-            g.text = "";
-        } else {
-            viewport.removeChild(g);
-        }
-    });
-}
 
 export function renderPoint(
     graphics: SmoothGraphics,
@@ -124,47 +113,31 @@ export function renderLineGraphics(
     viewport.addChild(textGraphics);
 }
 
-function renderPointLabel(
-    point: Point,
-    viewport: Viewport,
-    graphicsStoreRef: React.MutableRefObject<
-        Record<string, (SmoothGraphics | PIXI.Text)[]>
-    >,
-    pointNumberRef: React.MutableRefObject<number>,
-) {
-    const labels = "ABCDEFGHIJKLMNOPQRSTUPWXYZ".split("");
-    const pointLabelKey = JSON.stringify(point);
-    let pointLabelGraphics = new PIXI.Text("", {...textGraphicsOptions, fontSize: 18});
-    pointLabelGraphics.zIndex = 10
-    // pointLabelGraphics.resolution = 4;
-
-    if (graphicsStoreRef.current[pointLabelKey]) {
-        pointLabelGraphics = graphicsStoreRef.current[
-            pointLabelKey
-        ][0] as PIXI.Text;
-        viewport.removeChild(pointLabelGraphics);
-    } else {
-        // console.log(pointLabelKey, labelIdx, labels[labelIdx]);
-        graphicsStoreRef.current[pointLabelKey] = [pointLabelGraphics];
-        pointLabelGraphics.text = labels[pointNumberRef.current];
-        pointNumberRef.current = (pointNumberRef.current + 1) % 26;
-    }
-    // const p1 = findPointAtDistance(line1, -20);
-    // const p2 = findPointAtDistance(line2, -20);
-    // const p3 = findParallelogramFourthPoint([commonPoint, p1, p2], 0, 1.2)!;
-    pointLabelGraphics.x = point.x;
-    pointLabelGraphics.y = point.y;
-    viewport.addChild(pointLabelGraphics);
-}
-
-function renderAngleGraphics(
-    line1: Line,
-    line2: Line,
+function renderAngleWithLabelGraphics(
+    l1: Line,
+    l2: Line,
     commonPoint: Point,
     angleDegrees: number,
     graphics: SmoothGraphics,
     angleTextGraphics: PIXI.Text,
+    graphicsStoreRef: React.MutableRefObject<
+        Record<string, (SmoothGraphics | PIXI.Text)[]>
+    >,
+    pointNumberRef: React.MutableRefObject<number>,
+    viewport: Viewport,
 ) {
+    const labels = "ABCDEFGHIJKLMNOPQRSTUPWXYZ".split("");
+    const line1: Line = {
+        start: commonPoint,
+        end: isSamePoint(l1.start, commonPoint) ? l1.end : l1.start,
+        shapeId: l1.shapeId,
+    };
+    const line2: Line = {
+        start: commonPoint,
+        end: isSamePoint(l2.start, commonPoint) ? l2.end : l2.start,
+        shapeId: l2.shapeId,
+    };
+
     const line1Length = getDistance(line1.start, line1.end);
     const line2Length = getDistance(line2.start, line2.end);
 
@@ -202,6 +175,28 @@ function renderAngleGraphics(
     angleTextGraphics.x = angleFourthPoint.x - 10;
     angleTextGraphics.y = angleFourthPoint.y - 10;
     angleTextGraphics.text = `${roundupNumber(angleDegrees, 0)}°`;
+
+    const labelPoint = findParallelogramFourthPoint(
+        [commonPoint, arcStartPoint, arcEndPoint],
+        0,
+        -1,
+    )!;
+
+    const labelKey = getLabelKey(commonPoint);
+    if (!graphicsStoreRef.current[labelKey]) {
+        graphicsStoreRef.current[labelKey] = [
+            new PIXI.Text(
+                `${labels[pointNumberRef.current]}`,
+                textGraphicsOptions,
+            ),
+        ];
+        pointNumberRef.current = pointNumberRef.current + 1;
+        viewport.addChild(graphicsStoreRef.current[labelKey][0] as PIXI.Text);
+    }
+    const labelGraphics = graphicsStoreRef.current[labelKey][0] as PIXI.Text;
+    labelGraphics.x = labelPoint.x;
+    labelGraphics.y = labelPoint.y;
+    labelGraphics.resolution = viewport.scale.x
 }
 
 export function renderAngleBetweenLines(
@@ -230,9 +225,10 @@ export function renderAngleBetweenLines(
         const sortedPoints = getPointsSortedInClockwise(endPoints, commonPoint);
         const n = sortedPoints.length;
         let totalAngleSum = 0;
-        let largestAngleKey = "";
-        let largestAngle = 120;
-        for (let i = 1; i < n; i++) {
+        // let largestAngleKey = "";
+        // let largestAngle = 120;
+        for (let i = 1; i <= n; i++) {
+            if (i === n && totalAngleSum <= 180) continue;
             const endPoint1 = sortedPoints[(i - 1 + n) % n];
             const endPoint2 = sortedPoints[i % n];
             let line1 = {
@@ -270,98 +266,22 @@ export function renderAngleBetweenLines(
                 angleTextGraphics ?? new PIXI.Text("", textGraphicsOptions);
             atg.resolution = 4;
 
-            renderAngleGraphics(
+            renderAngleWithLabelGraphics(
                 line1,
                 line2,
                 commonPoint,
                 angleDegrees,
                 g,
                 atg,
-            );
-
-            renderPointLabel(
-                commonPoint,
-                viewport,
                 graphicsStoreRef,
                 pointNumberRef,
-            );
-
-            // renderPoint(g, line1.end, 3, i % 2 === 0 ? "blue" : "green")
-
-            const key = getAngleKey(line1, line2);
-            viewport.addChild(g);
-            viewport.addChild(atg);
-            graphicsStoreRef.current[key] = [g, atg];
-            // console.log("visited", line1.shapeId, line2.shapeId);
-            if (angleDegrees > largestAngle) {
-                largestAngle = angleDegrees;
-                largestAngleKey = key;
-            }
-        }
-
-        // if (n > 2 && largestAngleKey.length) {
-        //     graphicsStoreRef.current[largestAngleKey].forEach((g) =>
-        //         viewport.removeChild(g),
-        //     );
-        // }
-
-        if (totalAngleSum > 180) {
-            const endPoint1 = sortedPoints[n - 1];
-            const endPoint2 = sortedPoints[0];
-            let line1 = {
-                start: commonPoint,
-                end: endPoint1,
-                shapeId: -1,
-            };
-            let line2 = {
-                start: commonPoint,
-                end: endPoint2,
-                shapeId: -1,
-            };
-            line1 = getLineFromLines(line1, lines)!;
-            line2 = getLineFromLines(line2, lines)!;
-            if (!line1 || !line2) continue;
-            line1 = {
-                shapeId: line1.shapeId,
-                start: commonPoint,
-                end: endPoint1,
-            } as Line;
-            line2 = {
-                shapeId: line2.shapeId,
-                start: commonPoint,
-                end: endPoint2,
-            } as Line;
-
-            const angleDegrees = getAngleBetweenLines(line1, line2);
-            if (angleDegrees === -1) {
-                continue;
-            }
-            const g = graphics ?? new SmoothGraphics();
-            const atg =
-                angleTextGraphics ?? new PIXI.Text("", textGraphicsOptions);
-            atg.resolution = 4;
-
-            renderAngleGraphics(
-                line1,
-                line2,
-                commonPoint,
-                angleDegrees,
-                g,
-                atg,
-            );
-
-            renderPointLabel(
-                commonPoint,
                 viewport,
-                graphicsStoreRef,
-                pointNumberRef,
             );
 
             const key = getAngleKey(line1, line2);
             viewport.addChild(g);
             viewport.addChild(atg);
             graphicsStoreRef.current[key] = [g, atg];
-            // console.log("visited", line1.shapeId, line2.shapeId);
         }
     }
 }

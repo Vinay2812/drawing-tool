@@ -23,3 +23,7 @@ export function getPointFromPointKey (key: string) {
         y: parseFloat(splits[2])
     }
 }
+
+export function getLabelKey (point: Point) {
+    return `label-${point.x}-${point.y}`
+}
