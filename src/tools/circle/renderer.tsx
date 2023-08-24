@@ -28,9 +28,8 @@ export function renderCircleWithMeasurements(
     graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
-    // circleGraphics?: SmoothGraphics,
-    // textGraphics?: PIXI.Text,
     config: CanvasConfig,
+    editable = true,
 ) {
     const circleGraphics = new SmoothGraphics();
     const textGraphics = new PIXI.Text("", config.textGraphicsOptions);
@@ -43,10 +42,10 @@ export function renderCircleWithMeasurements(
         graphicsStoreRef.current[key].forEach((item) => {
             viewport.removeChild(item);
         });
-        graphicsStoreRef.current[key] = [];
     }
-    graphicsStoreRef.current[key].push(circleGraphics);
-    graphicsStoreRef.current[key].push(textGraphics);
+    if (editable) {
+        graphicsStoreRef.current[key] = [circleGraphics, textGraphics];
+    }
     renderCircle(start, end, circleGraphics, config);
     renderLine(circleGraphics, circle, "red", config);
     renderDistanceOnLine(textGraphics, circle, config);

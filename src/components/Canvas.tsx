@@ -64,6 +64,7 @@ type Props = {
     canvasWidth: number;
     canvasHeight: number;
     unit: string;
+    defaultDrawingItems: DrawingItem[]
 };
 
 export default function Canvas({
@@ -83,6 +84,7 @@ export default function Canvas({
     canvasWidth,
     canvasHeight,
     unit,
+    defaultDrawingItems
 }: Props) {
     const containerRef = useRef<HTMLElement | null>(null);
     const startPoint = useRef<Point | null>(null);
@@ -237,7 +239,7 @@ export default function Canvas({
         viewportRef.current!.resize(window.innerWidth, window.innerHeight);
     };
 
-    function renderDrawingItems(drawingItems: DrawingItem[]) {
+    function renderDrawingItems(drawingItems: DrawingItem[], editable = true) {
         drawingItems.forEach((item) => {
             const renderer = tools[item.type].renderer;
             renderer(
@@ -245,6 +247,7 @@ export default function Canvas({
                 viewportRef.current!,
                 graphicsStoreRef,
                 canvasConfig,
+                editable
             );
         });
         renderAngleBetweenLines(
@@ -255,6 +258,7 @@ export default function Canvas({
             graphicsStoreRef,
             pointNumberRef,
             canvasConfig,
+            editable
         );
     }
     function handleViewPortZoom(
@@ -368,6 +372,7 @@ export default function Canvas({
         setTimeout(() => {
             if (!app || !containerRef.current) return;
             renderCanvasGrid(viewport, app, gridGraphics, canvasConfig);
+            renderDrawingItems(defaultDrawingItems, false)
         }, 100);
     }
 

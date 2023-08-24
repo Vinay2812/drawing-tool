@@ -1,5 +1,56 @@
-import DrawingArea, { DrawingAreaConfig } from "./components/DrawingArea";
+import DrawingArea, {
+    DrawingAreaConfig,
+    DrawingItem,
+} from "./components/DrawingArea";
 import "./index.css";
+
+const defaultTriangle: DrawingItem[] = [
+    {
+        id: 1,
+        type: "line",
+        data: {
+            shapeId: 1,
+            start: {
+                x: 135,
+                y: 298,
+            },
+            end: {
+                x: 324,
+                y: 151,
+            },
+        },
+    },
+    {
+        id: 2,
+        type: "line",
+        data: {
+            shapeId: 2,
+            start: {
+                x: 324,
+                y: 151,
+            },
+            end: {
+                x: 491,
+                y: 320,
+            },
+        },
+    },
+    {
+        id: 3,
+        type: "line",
+        data: {
+            shapeId: 3,
+            start: {
+                x: 135,
+                y: 298,
+            },
+            end: {
+                x: 491,
+                y: 320,
+            },
+        },
+    },
+];
 
 export default function App() {
     const props: DrawingAreaConfig = {
@@ -9,6 +60,7 @@ export default function App() {
         hiddenTools: ["circle"],
         unit: "mm",
         showSubGrid: false,
+        defaultDrawingItems: [...defaultTriangle],
     };
     return <DrawingArea {...props} />;
 }

@@ -87,6 +87,7 @@ export type DrawingAreaConfig = {
     canvasWidth: number;
     canvasHeight: number;
     hiddenTools: ToolsType[];
+    defaultDrawingItems?: DrawingItem[]
 };
 
 export default function DrawingArea(props: DrawingAreaConfig) {
@@ -111,11 +112,13 @@ export default function DrawingArea(props: DrawingAreaConfig) {
             fill: "#000",
             fontWeight: "600",
             fontSize:
-                Math.sqrt(props.gridSize + lineWidth) / (isMobile() ? 0.7 : 3) +
+                Math.sqrt(props.gridSize + lineWidth) / (isMobile() ? 0.7 : 40) +
                 ((35 - 20) * (window.innerWidth - 320)) / (1920 - 320),
         }),
         [props.gridSize, lineWidth],
     );
+
+    console.log("drawingItems", drawingItems)
 
     function handleSubmit() {
         const lines = drawingItems
@@ -249,6 +252,7 @@ export default function DrawingArea(props: DrawingAreaConfig) {
                     canvasWidth={props.canvasWidth - 20}
                     canvasHeight={props.canvasHeight - 1}
                     unit={props.unit}
+                    defaultDrawingItems={props.defaultDrawingItems ?? []}
                 />
                 <button
                     className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4 disabled:bg-red-300 disabled:cursor-not-allowed"
