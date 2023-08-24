@@ -19,7 +19,7 @@ export const tools = {
     [selectTool.config.name]: selectTool.config,
     [pencilTool.config.name]: pencilTool.config,
     [lineTool.config.name]: lineTool.config,
-    [circleTool.config.name]: circleTool.config,
+    // [circleTool.config.name]: circleTool.config,
     [undoTool.config.name]: undoTool.config,
     [redoTool.config.name]: redoTool.config,
     [clearTool.config.name]: clearTool.config,

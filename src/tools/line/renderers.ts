@@ -154,6 +154,7 @@ function renderAngleWithLabelGraphics(
         0,
         controlPointFactor,
     )!;
+    console.log("controlPoint")
     if (!controlPoint) return;
 
     // Create a Graphics object to draw the arc
@@ -220,8 +221,8 @@ export function renderAngleBetweenLines(
         if (endPoints.length < 2) {
             continue;
         }
-        console.clear();
         const commonPoint = getPointFromPointKey(key);
+        // const commonPoint = key;
         const sortedPoints = getPointsSortedInClockwise(endPoints, commonPoint);
         const n = sortedPoints.length;
         let totalAngleSum = 0;
@@ -229,8 +230,9 @@ export function renderAngleBetweenLines(
         // let largestAngle = 120;
         for (let i = 1; i <= n; i++) {
             if (i === n && totalAngleSum <= 180) continue;
-            const endPoint1 = sortedPoints[(i - 1 + n) % n];
-            const endPoint2 = sortedPoints[i % n];
+            const endPoint1 = sortedPoints[((i - 1 + n) % n)];
+            const endPoint2 = sortedPoints[(i % n)];
+
             let line1 = {
                 start: commonPoint,
                 end: endPoint1,

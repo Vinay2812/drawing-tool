@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import Toolbox from "./Toolbox";
-import { lazy, useEffect, useRef, useState } from "react";
+import { lazy, useEffect, useMemo, useRef, useState } from "react";
 import { tools, type ToolsType } from "../tools";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getShapesData } from "../utils/shapes";
@@ -80,7 +80,15 @@ export default function DrawingArea() {
     >({});
     const pointNumberRef = useRef<number>(0);
     const [shapesData, setShapesData] = useState<ShapeData[]>([]);
-    const gridGraphics = new SmoothGraphics();
+    const gridGraphics = useMemo(() => {
+        return new SmoothGraphics()
+    }, []);
+
+    // useEffect(() => {
+    //     if (!gridGraphicsRef.current) {
+    //         gridGraphicsRef.current = new SmoothGraphics()
+    //     }
+    // }, [])
 
     function handleSubmit() {
         const lines = drawingItems

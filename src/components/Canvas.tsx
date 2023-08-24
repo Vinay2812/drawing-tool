@@ -3,10 +3,17 @@ import { ToolsType, tools } from "../tools";
 import { Circle, DrawingItem, Line, Pencil, Point } from "./DrawingArea";
 import { useEffect, useRef } from "react";
 import { renderCanvasGrid } from "./renderGrid";
-import { textGraphicsOptions } from "../tools/utils/config";
+import { GRID_UNIT, textGraphicsOptions } from "../tools/utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { renderAngleBetweenLines } from "../tools/line";
 import { Viewport } from "pixi-viewport";
+import {
+    findPointAtDistance,
+    getPointerPosition,
+    isPointerNearEdges,
+    isPointerOutside,
+} from "../tools/utils/calculations";
+import { delay } from "../tools/utils/helpers";
 
 export type Shape = Line | Circle | Pencil;
 
@@ -35,6 +42,7 @@ export type PointerEventsProps = {
     }>;
     pencilPointsRef: React.MutableRefObject<Point[]>;
     viewport: Viewport;
+    gridGraphics: SmoothGraphics;
 };
 
 type Props = {
@@ -81,7 +89,6 @@ export default function Canvas({
     const maxZoomPercent = 4;
     const minZoomPercent = 0.5;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getProps = (): PointerEventsProps => {
         return {
             startPoint: startPoint.current,
@@ -102,7 +109,7 @@ export default function Canvas({
             pointNumberRef,
             lastTouchRef,
             pencilPointsRef,
-
+            gridGraphics,
             shapes: itemsRef.current.reduce((data, item) => {
                 if (!data[item.type]) {
                     data[item.type] = [];
@@ -113,7 +120,67 @@ export default function Canvas({
         };
     };
 
-    function handleOnMove(e: MouseEvent) {
+    async function handlePointNearEdge(e: MouseEvent) {
+        let touchingEdge = isPointerNearEdges(e, containerRef.current!);
+        let outsideContainer = isPointerOutside(e, containerRef.current!);
+        let timeSpent = 3;
+
+        while (touchingEdge && !outsideContainer) {
+            const endPoint = getPointerPosition(
+                e,
+                containerRef.current!,
+                viewportRef.current!,
+            );
+            const start = startPoint.current!;
+            const line: Line = {
+                start: endPoint,
+                end: start,
+                shapeId: -1,
+            };
+
+            if (!start || !endPoint) {
+                break;
+            }
+
+            const shift = findPointAtDistance(line, -10);
+            const distanceFactor =
+                (GRID_UNIT * timeSpent) / (viewportRef.current!.scale.x ?? 1);
+            const deltaX = (start.x - shift.x) / distanceFactor;
+            const deltaY = (start.y - shift.y) / distanceFactor;
+
+            const newCenter = {
+                x: viewportRef.current!.center.x - deltaX,
+                y: viewportRef.current!.center.y - deltaY,
+            };
+
+            // Update the viewport's center position
+            viewportRef.current!.moveCenter(newCenter.x, newCenter.y);
+            gridGraphics.clear()
+            renderCanvasGrid(viewportRef.current, appRef.current, gridGraphics);
+
+            // Wait for a short delay
+            await delay(100);
+
+            timeSpent += 1;
+
+            // Update edge status
+            touchingEdge = isPointerNearEdges(e, containerRef.current!);
+            outsideContainer = isPointerOutside(e, containerRef.current!, -5);
+
+            if (outsideContainer) {
+                const props = getProps();
+                return tools[activeTool].events.onUp(e, props);
+            }
+
+            const props = getProps();
+            tools[activeTool].events.onMove(e, props);
+        }
+    }
+
+    async function handleOnMove(e: MouseEvent) {
+        if (startPoint.current) {
+            await handlePointNearEdge(e);
+        }
         const props = getProps();
         return tools[activeTool].events.onMove(e, props);
     }
@@ -134,30 +201,6 @@ export default function Canvas({
         viewportRef.current!.resize(window.innerWidth, window.innerHeight);
     };
 
-    // function addViewportFunctionality() {
-    //     viewportRef
-    //         .current!.pinch({
-    //             noDrag: true,
-    //             factor: 1,
-    //             percent: 1,
-    //             axis: "all",
-    //         })
-    //         .wheel()
-    //         .decelerate();
-    // }
-
-    // function removeViewportFunctionality() {
-    //     viewportRef
-    //         .current!.pinch({
-    //             percent: 0,
-    //             noDrag: true,
-    //         })
-    //         .wheel({
-    //             percent: 0,
-    //         })
-    //         .decelerate();
-    // }
-
     function renderDrawingItems(drawingItems: DrawingItem[]) {
         drawingItems.forEach((item) => {
             const renderer = tools[item.type].renderer;
@@ -174,30 +217,22 @@ export default function Canvas({
             viewportRef.current!,
             graphicsStoreRef,
             pointNumberRef,
+            graphics,
         );
     }
-
     function handleViewPortZoom(
         gridGraphics: SmoothGraphics,
         viewport: Viewport,
         app: PIXI.Application<HTMLCanvasElement>,
     ) {
-        // gridGraphics.clear();
-        viewport.removeChild(graphics);
         isDrawing.current = false;
         pencilPointsRef.current = [];
-        setStartPoint(null);
-        setSelectedPoint(null);
         const restrictedZoomFactor = Math.min(
             maxZoomPercent,
             Math.max(minZoomPercent, viewport.scale.x),
         );
-
-        // Update the viewport's scale to the restricted zoom factor
         viewport.setZoom(restrictedZoomFactor);
-
         renderCanvasGrid(viewport, app, gridGraphics);
-        renderDrawingItems(itemsRef.current);
     }
 
     function createSetup() {
@@ -236,15 +271,17 @@ export default function Canvas({
                 axis: "all",
             })
             .wheel()
-            .decelerate();
-        // .drag()
+            // .decelerate()
+            .drag({
+                wheel: false,
+            });
+
         app.renderer.render(app.stage);
-        app.stage.addChild(viewport);
         app.ticker.start();
-        containerRef.current = container;
-        appRef.current = app;
-        viewportRef.current = viewport;
-        app.stage.addChild(gridGraphics);
+
+        viewport.addChild(gridGraphics);
+        app.stage.addChild(viewport);
+
         viewport.on("zoomed", () => {
             handleViewPortZoom(
                 gridGraphics,
@@ -252,6 +289,12 @@ export default function Canvas({
                 appRef.current!,
             );
         });
+
+        viewport.on("moved", () => {
+            gridGraphics.clear();
+            renderCanvasGrid(viewport, appRef.current, gridGraphics);
+        });
+
         zoomIn.onclick = () => {
             const newScale = Math.min(
                 viewportRef.current!.scale.x * 1.2,
@@ -276,21 +319,26 @@ export default function Canvas({
                 appRef.current!,
             );
         };
+
+        containerRef.current = container;
+        appRef.current = app;
+        viewportRef.current = viewport;
+
         setTimeout(() => {
             if (!app || !containerRef.current) return;
             renderCanvasGrid(viewport, app, gridGraphics);
         }, 100);
     }
 
-    // useEffect(() => {
-    //     if (!viewportRef.current) return;
-        // const viewport = viewportRef.current;
-        // if (activeTool === "select") {
-        //     addViewportFunctionality();
-        // } else {
-        //     removeViewportFunctionality();
-        // }
-    // }, [activeTool]);
+    useEffect(() => {
+        if (!viewportRef.current) return;
+        const viewport = viewportRef.current;
+        if (activeTool === "select") {
+            viewport.plugins.resume("drag");
+        } else {
+            viewport.plugins.pause("drag");
+        }
+    }, [activeTool, viewportRef]);
 
     function addEventListeners() {
         const container = containerRef.current!;
@@ -299,7 +347,7 @@ export default function Canvas({
         viewport.addEventListener("pointerdown", handleOnDown);
         viewport.addEventListener("pointermove", handleOnMove);
         viewport.addEventListener("pointerup", handleOnUp);
-        viewport.addEventListener("pointerout", handleOnUp);
+        // viewport.addEventListener("pointerout", handleOnUp);
         window.addEventListener("resize", onResize);
     }
 
@@ -310,7 +358,11 @@ export default function Canvas({
         viewport.removeEventListener("pointerdown", handleOnDown);
         viewport.removeEventListener("pointermove", handleOnMove);
         viewport.removeEventListener("pointerup", handleOnUp);
-        viewport.removeEventListener("pointerout", handleOnUp);
+        // viewport.removeEventListener("pointerout", handleOnUp);
+        // viewport.removeEventListener("pointerout", (e) =>
+        //     resetViewport(e, viewport, appRef.current!),
+        // );
+
         window.removeEventListener("resize", onResize);
     }
 
@@ -323,7 +375,7 @@ export default function Canvas({
             removeEventListeners();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTool, isDrawing]);
+    }, [activeTool]);
 
     useEffect(() => {
         itemsRef.current = drawingItems;

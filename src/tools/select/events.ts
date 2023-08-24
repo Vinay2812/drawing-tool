@@ -15,6 +15,7 @@ import { renderLineGraphics, renderAngleBetweenLines } from "../line/renderers";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getAngleKey, getLineKey } from "../utils/keys";
 import { Viewport } from "pixi-viewport";
+import { renderCanvasGrid } from "../../components/renderGrid";
 
 export function removeAngleGraphics(
     lines: Line[],
@@ -53,12 +54,17 @@ export function onDown(e: MouseEvent, others: PointerEventsProps) {
         setSelectedPoint,
         shapes,
     } = others;
+    // setStartPoint(getPointerPosition(e, container, viewport));
     const lines = (shapes["line"] ?? []) as Line[];
     const clickedPoint = getPointerPosition(e, container, viewport);
     const points = getPointsFromLines(lines);
     const endPoint = getClosestPoint(clickedPoint, points, GRID_UNIT / 2);
-    if (isPointAppearingOnce(endPoint, points)) {
-        setSelectedPoint(endPoint);
+    console.log("points", points, endPoint)
+    // viewport.plugins.resume("drag");
+    const isSinglePoint = isPointAppearingOnce(endPoint, points);
+    if (isSinglePoint) {
+        viewport.plugins.pause("drag");
+
         const clickedLine = lines.find(
             (item) =>
                 isSamePoint(item.start, endPoint) ||
@@ -68,11 +74,12 @@ export function onDown(e: MouseEvent, others: PointerEventsProps) {
             const fixedPoint = isSamePoint(clickedLine.start, endPoint)
                 ? clickedLine.end
                 : clickedLine.start;
+            setSelectedPoint(endPoint);
             setStartPoint(fixedPoint);
             // console.log("clickedLine", clickedLine, fixedPoint);
+            setIsDrawing(true);
+            return;
         }
-        setIsDrawing(true);
-        return;
     }
     setIsDrawing(false);
 }
@@ -90,7 +97,31 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         pointNumberRef,
         shapes,
         container,
+        app,
+        gridGraphics,
+        setStartPoint,
     } = others;
+    if (startPoint && !isDrawing) {
+        // const { marginLeft = "0", marginTop = "0" } = container.style;
+        // const currPos = getPointerPosition(e, container, viewport);
+        // const deltaX = currPos.x - startPoint.x;
+        // const deltaY = currPos.y - startPoint.y;
+        // // Update the viewport's center position based on the drag
+        // const scrollSpeed = 1; // Adjust as needed
+        // const movementX = -deltaX * scrollSpeed; // Invert to simulate drag scroll
+        // const movementY = -deltaY * scrollSpeed;
+        // // viewport.moveCenter(
+        // //     viewport.center.x + movementX,
+        // //     viewport.center.y + movementY,
+        // // );
+        // container.style.marginLeft = `${parseFloat(marginLeft) + movementX}`;
+        // container.style.marginTop = `${parseFloat(marginTop) + movementY}`;
+        // app.screen.pad(movementX, movementX)
+        // // renderCanvasGrid(viewport, app, gridGraphics)
+        // // ... (Update viewport dimensions and position as needed)
+        // // Update start drag positions for the next event
+        // setStartPoint(currPos);
+    }
     if (!startPoint || !isDrawing || !selectedPoint) {
         return;
     }
@@ -148,7 +179,10 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         shapes,
         container,
     } = others;
-    if (!startPoint || !isDrawing || !selectedPoint) return;
+    if (!startPoint || !isDrawing || !selectedPoint) {
+        return;
+    }
+    viewport.plugins.resume("drag");
     graphics.clear();
     textGraphics.text = "";
     angleTextGraphics.text = "";
@@ -196,13 +230,16 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
                 (item) => !areSameLines(item.data as Line, removingLine),
             );
             if (isNewLine) {
-                filteredLines.push({
-                    type: "line",
-                    data: newLine,
-                    id: filteredLines.length,
-                });
+                return [
+                    ...filteredLines,
+                    {
+                        type: "line",
+                        data: newLine,
+                        id: filteredLines.length,
+                    },
+                ];
             }
-            return filteredLines;
+            return [...filteredLines];
         });
     }
 }

@@ -1,6 +1,7 @@
 import { Viewport } from "pixi-viewport";
 import type { Point, Line } from "../../components/DrawingArea";
 import { getPointKey } from "./keys";
+import { GRID_UNIT } from "./config";
 // import * as PIXI from "pixi.js";
 
 export function isSamePoint(start: Point, end: Point) {
@@ -264,7 +265,10 @@ export function getPointerPosition(
 
 export function getPointsFromLines(lines: Line[]) {
     if (!lines) return [];
-    return lines.flatMap((line) => [line.start, line.end]);
+    return lines.reduce(
+        (prev, line) => [...prev, line.start, line.end],
+        [] as Point[],
+    );
 }
 
 export function getPointsAppearingOnce(points: Point[]): Point[] {
@@ -292,13 +296,16 @@ export function getPointsAppearingOnce(points: Point[]): Point[] {
 }
 
 export function isPointAppearingOnce(point: Point, allPoints: Point[]) {
-    const points = getPointsAppearingOnce(allPoints);
-    for (const p of points) {
-        if (isSamePoint(p, point)) {
-            return true;
-        }
+    // const points = getPointsAppearingOnce(allPoints);
+    const pointCountMap: Record<string, number> = {};
+
+    for (const p of allPoints) {
+        const key = JSON.stringify(p);
+        if (!pointCountMap[key]) pointCountMap[key] = 0;
+        pointCountMap[key] = pointCountMap[key] + 1;
     }
-    return false;
+    console.log(pointCountMap[JSON.stringify(point)]);
+    return pointCountMap[JSON.stringify(point)] === 1;
 }
 
 export function areSameLines(line1: Line, line2: Line) {
@@ -311,13 +318,14 @@ export function areSameLines(line1: Line, line2: Line) {
 }
 
 export function getLineFromLines(line: Line, lines: Line[]) {
-    return lines.find((line1) => {
+    return lines.find((line1, idx) => {
         const line2 = {
             end: line1.start,
             start: line1.end,
             shapeId: line1.shapeId,
         };
         const same = areSameLines(line1, line) || areSameLines(line2, line);
+        console.log(idx, line1, line2, line, same)
         return same;
     });
 }
@@ -329,6 +337,8 @@ export function getCommonPointsMap(lines: Line[]) {
         const { start, end } = line;
         const key1 = getPointKey(start);
         const key2 = getPointKey(end);
+        // const key1 = start;
+        // const key2 = end;
         const e1 = commonPointMap.get(key1) ?? [];
         commonPointMap.set(key1, [...e1, { x: end.x, y: end.y }]);
         const e2 = commonPointMap.get(key2) ?? [];
@@ -432,4 +442,39 @@ export function getPointsSortedInClockwise(
     //         : 1,
     // );
     // return [...leftPoints, ...rightPoints];
+}
+
+export function isPointerNearEdges(
+    e: MouseEvent,
+    container: HTMLElement,
+    edgeThreshold = GRID_UNIT
+) {
+    const { clientX: pointerX, clientY: pointerY } = e;
+    const containerRect = container.getBoundingClientRect();
+
+    const isNearLeft = pointerX - containerRect.left <= edgeThreshold;
+    const isNearRight = containerRect.right - pointerX <= edgeThreshold;
+    const isNearTop = pointerY - containerRect.top <= edgeThreshold;
+    const isNearBottom = containerRect.bottom - pointerY <= edgeThreshold;
+
+    // return {
+    //     left: isNearLeft,
+    //     right: isNearRight,
+    //     top: isNearTop,
+    //     bottom: isNearBottom,
+    // };
+    return isNearLeft || isNearBottom || isNearRight || isNearTop;
+}
+
+export function isPointerOutside(event: MouseEvent, container: HTMLElement, gap = 20) {
+    const containerRect = container.getBoundingClientRect();
+    const pointerX = event.clientX;
+    const pointerY = event.clientY;
+
+    return (
+        pointerX + gap < containerRect.left ||
+        pointerX - gap > containerRect.right ||
+        pointerY + gap < containerRect.top ||
+        pointerY - gap > containerRect.bottom
+    );
 }
