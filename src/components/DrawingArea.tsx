@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as PIXI from "pixi.js";
 import Toolbox from "./Toolbox";
-import { lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { tools, type ToolsType } from "../tools";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getShapesData } from "../utils/shapes";
@@ -147,115 +147,117 @@ export default function DrawingArea(props: DrawingAreaConfig) {
     }, [shapesData]);
 
     return (
-        <div className="flex flex-col items-center">
-            {/* <div className="m-2 overflow-scroll w-[600px] h-[500px]"> */}
-            <Toolbox
-                activeTool={activeTool}
-                setActiveTool={setActiveTool}
-                drawingItems={drawingItems}
-                setDrawingItems={setDrawingItems}
-                undoItems={undoItems}
-                setUndoItems={setUndoItems}
-                // drawingItems={drawingItems}
-                // setDrawingItems={setActiveDrawingItems}
-                graphicsStoreRef={graphicsStoreRef}
-                pointNumberRef={pointNumberRef}
-                appRef={appRef}
-                viewportRef={viewportRef}
-                hiddenTools={props.hiddenTools}
-                className={cn(
-                    "flex gap-2 justify-between py-4 h-[72px]",
-                    `w-[${props.canvasWidth - 20}px]`,
-                    "bg-white",
-                )}
-                style={{
-                    width: props.canvasWidth - 20,
-                    height: 72,
-                }}
-            />
-            <div
-                id="canvas-container"
-                className={cn(
-                    `!w-[${props.canvasWidth - 20}px]`,
-                    `!h-[${props.canvasHeight - 1}px]`,
-                    `${tools[activeTool].cursor}`,
-                    "bg-white outline outline-1 outline-gray-400 !overflow-hidden relative",
-                )}
-                style={{
-                    width: props.canvasWidth - 20,
-                    height: props.canvasHeight - 1,
-                }}
-            >
-                <div className="absolute right-2 top-2 flex flex-col gap-1">
-                    <button
-                        className=" bg-slate-300 p-2 hover:bg-slate-200"
-                        id="zoom-in"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
+        <Suspense fallback="Loading...">
+            <div className="flex flex-col items-center">
+                {/* <div className="m-2 overflow-scroll w-[600px] h-[500px]"> */}
+                <Toolbox
+                    activeTool={activeTool}
+                    setActiveTool={setActiveTool}
+                    drawingItems={drawingItems}
+                    setDrawingItems={setDrawingItems}
+                    undoItems={undoItems}
+                    setUndoItems={setUndoItems}
+                    // drawingItems={drawingItems}
+                    // setDrawingItems={setActiveDrawingItems}
+                    graphicsStoreRef={graphicsStoreRef}
+                    pointNumberRef={pointNumberRef}
+                    appRef={appRef}
+                    viewportRef={viewportRef}
+                    hiddenTools={props.hiddenTools}
+                    className={cn(
+                        "flex gap-2 justify-between py-4 h-[72px]",
+                        `w-[${props.canvasWidth - 20}px]`,
+                        "bg-white",
+                    )}
+                    style={{
+                        width: props.canvasWidth - 20,
+                        height: 72,
+                    }}
+                />
+                <div
+                    id="canvas-container"
+                    className={cn(
+                        `!w-[${props.canvasWidth - 20}px]`,
+                        `!h-[${props.canvasHeight - 1}px]`,
+                        `${tools[activeTool].cursor}`,
+                        "bg-white outline outline-1 outline-gray-400 !overflow-hidden relative",
+                    )}
+                    style={{
+                        width: props.canvasWidth - 20,
+                        height: props.canvasHeight - 1,
+                    }}
+                >
+                    <div className="absolute right-2 top-2 flex flex-col gap-1">
+                        <button
+                            className=" bg-slate-300 p-2 hover:bg-slate-200"
+                            id="zoom-in"
                         >
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" x2="16.65" y1="21" y2="16.65" />
-                            <line x1="11" x2="11" y1="8" y2="14" />
-                            <line x1="8" x2="14" y1="11" y2="11" />
-                        </svg>
-                    </button>
-                    <button
-                        className="bg-slate-300 p-2 hover:bg-slate-200"
-                        id="zoom-out"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" x2="16.65" y1="21" y2="16.65" />
+                                <line x1="11" x2="11" y1="8" y2="14" />
+                                <line x1="8" x2="14" y1="11" y2="11" />
+                            </svg>
+                        </button>
+                        <button
+                            className="bg-slate-300 p-2 hover:bg-slate-200"
+                            id="zoom-out"
                         >
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" x2="16.65" y1="21" y2="16.65" />
-                            <line x1="8" x2="14" y1="11" y2="11" />
-                        </svg>
-                    </button>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" x2="16.65" y1="21" y2="16.65" />
+                                <line x1="8" x2="14" y1="11" y2="11" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
+                <Canvas
+                    activeTool={activeTool}
+                    // drawingItems={drawingItemsRef.current}
+                    drawingItems={drawingItems}
+                    setDrawingItems={setDrawingItems}
+                    graphicsStoreRef={graphicsStoreRef}
+                    pointNumberRef={pointNumberRef}
+                    appRef={appRef}
+                    viewportRef={viewportRef}
+                    setUndoItems={setUndoItems}
+                    gridGraphics={gridGraphics}
+                    gridSize={props.gridSize}
+                    showSubGrid={props.showSubGrid}
+                    lineWidth={lineWidth}
+                    textGraphicsOptions={textGraphicsOptions}
+                    canvasWidth={props.canvasWidth - 20}
+                    canvasHeight={props.canvasHeight - 1}
+                    unit={props.unit}
+                />
+                <button
+                    className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4 disabled:bg-red-300 disabled:cursor-not-allowed"
+                    onClick={handleSubmit}
+                    disabled={!drawingItems.length}
+                >
+                    Submit
+                </button>
             </div>
-            <Canvas
-                activeTool={activeTool}
-                // drawingItems={drawingItemsRef.current}
-                drawingItems={drawingItems}
-                setDrawingItems={setDrawingItems}
-                graphicsStoreRef={graphicsStoreRef}
-                pointNumberRef={pointNumberRef}
-                appRef={appRef}
-                viewportRef={viewportRef}
-                setUndoItems={setUndoItems}
-                gridGraphics={gridGraphics}
-                gridSize={props.gridSize}
-                showSubGrid={props.showSubGrid}
-                lineWidth={lineWidth}
-                textGraphicsOptions={textGraphicsOptions}
-                canvasWidth={props.canvasWidth - 20}
-                canvasHeight={props.canvasHeight - 1}
-                unit={props.unit}
-            />
-            <button
-                className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4 disabled:bg-red-300 disabled:cursor-not-allowed"
-                onClick={handleSubmit}
-                disabled={!drawingItems.length}
-            >
-                Submit
-            </button>
-        </div>
+        </Suspense>
     );
 }

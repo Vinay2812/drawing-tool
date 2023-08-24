@@ -1,4 +1,3 @@
-import React, { Suspense } from "react";
 import DrawingArea, { DrawingAreaConfig } from "./components/DrawingArea";
 import "./index.css";
 
@@ -11,9 +10,5 @@ export default function App() {
         unit: "mm",
         showSubGrid: false,
     };
-    return (
-        <Suspense fallback="Loading...">
-            <DrawingArea {...props}/>
-        </Suspense>
-    );
+    return <DrawingArea {...props} />;
 }
