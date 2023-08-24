@@ -4,6 +4,7 @@ import DrawingArea, {
 } from "./components/DrawingArea";
 import "./index.css";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const defaultTriangle: DrawingItem[] = [
     {
         id: 1,
@@ -60,7 +61,7 @@ export default function App() {
         hiddenTools: ["circle"],
         unit: "mm",
         showSubGrid: false,
-        defaultDrawingItems: [...defaultTriangle],
+        // defaultDrawingItems: [...defaultTriangle],
     };
     return <DrawingArea {...props} />;
 }

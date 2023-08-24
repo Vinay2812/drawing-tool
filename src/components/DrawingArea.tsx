@@ -87,7 +87,7 @@ export type DrawingAreaConfig = {
     canvasWidth: number;
     canvasHeight: number;
     hiddenTools: ToolsType[];
-    defaultDrawingItems?: DrawingItem[]
+    defaultDrawingItems?: DrawingItem[];
 };
 
 export default function DrawingArea(props: DrawingAreaConfig) {
@@ -112,13 +112,12 @@ export default function DrawingArea(props: DrawingAreaConfig) {
             fill: "#000",
             fontWeight: "600",
             fontSize:
-                Math.sqrt(props.gridSize + lineWidth) / (isMobile() ? 0.7 : 40) +
+                Math.sqrt(props.gridSize + lineWidth) /
+                    (isMobile() ? 0.7 : 40) +
                 ((35 - 20) * (window.innerWidth - 320)) / (1920 - 320),
         }),
         [props.gridSize, lineWidth],
     );
-
-    console.log("drawingItems", drawingItems)
 
     function handleSubmit() {
         const lines = drawingItems
@@ -152,7 +151,6 @@ export default function DrawingArea(props: DrawingAreaConfig) {
     return (
         <Suspense fallback="Loading...">
             <div className="flex flex-col items-center">
-                {/* <div className="m-2 overflow-scroll w-[600px] h-[500px]"> */}
                 <Toolbox
                     activeTool={activeTool}
                     setActiveTool={setActiveTool}
@@ -160,8 +158,6 @@ export default function DrawingArea(props: DrawingAreaConfig) {
                     setDrawingItems={setDrawingItems}
                     undoItems={undoItems}
                     setUndoItems={setUndoItems}
-                    // drawingItems={drawingItems}
-                    // setDrawingItems={setActiveDrawingItems}
                     graphicsStoreRef={graphicsStoreRef}
                     pointNumberRef={pointNumberRef}
                     appRef={appRef}
@@ -236,7 +232,6 @@ export default function DrawingArea(props: DrawingAreaConfig) {
                 </div>
                 <Canvas
                     activeTool={activeTool}
-                    // drawingItems={drawingItemsRef.current}
                     drawingItems={drawingItems}
                     setDrawingItems={setDrawingItems}
                     graphicsStoreRef={graphicsStoreRef}
