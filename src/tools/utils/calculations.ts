@@ -1,7 +1,6 @@
 import { Viewport } from "pixi-viewport";
 import type { Point, Line } from "../../components/DrawingArea";
 import { getPointKey } from "./keys";
-import { GRID_UNIT } from "./config";
 // import * as PIXI from "pixi.js";
 
 export function isSamePoint(start: Point, end: Point) {
@@ -385,7 +384,7 @@ export function getPointsSortedInClockwise(
 export function isPointerNearEdges(
     e: MouseEvent,
     container: HTMLElement,
-    edgeThreshold = GRID_UNIT,
+    edgeThreshold: number,
 ) {
     const { clientX: pointerX, clientY: pointerY } = e;
     const containerRect = container.getBoundingClientRect();

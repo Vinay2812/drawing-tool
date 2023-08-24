@@ -1,4 +1,3 @@
-import { GRID_UNIT } from "../utils/config";
 import {
     getClosestPoint,
     getDistance,
@@ -16,11 +15,22 @@ import { PointerEventsProps } from "../../components/Canvas";
 import { Line } from "../../components/DrawingArea";
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
-    const { viewport, setStartPoint, setIsDrawing, shapes, container } = others;
+    const {
+        viewport,
+        setStartPoint,
+        setIsDrawing,
+        shapes,
+        container,
+        canvasConfig,
+    } = others;
     const lines = shapes["line"] ?? [];
     const points = getPointsFromLines(lines as Line[]);
     const startPoint = getPointerPosition(e, container, viewport);
-    const closestPoint = getClosestPoint(startPoint, points, GRID_UNIT / 2);
+    const closestPoint = getClosestPoint(
+        startPoint,
+        points,
+        canvasConfig.gridSize / 2,
+    );
 
     setStartPoint(closestPoint);
     setIsDrawing(true);
@@ -38,6 +48,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         shapes,
         viewport,
         container,
+        canvasConfig,
     } = others;
     if (!startPoint || !isDrawing) return;
     // const lines = itemsRef.current.map((item) => item.data);
@@ -50,18 +61,13 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     const line: Line = { start, end, shapeId: lines.length + 1 };
     const lineExist = getLineFromLines(line, lines);
     if (lineExist) return;
-    renderLineGraphics(
-        line,
-        viewport,
-        graphicsStoreRef,
-        graphics,
-        textGraphics,
-    );
+    renderLineGraphics(line, viewport, graphicsStoreRef, canvasConfig);
     renderAngleBetweenLines(
         [...lines, line],
         viewport,
         graphicsStoreRef,
         pointNumberRef,
+        canvasConfig,
     );
     viewport.addChild(textGraphics);
     viewport.addChild(graphics);
@@ -80,6 +86,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         shapes,
         viewport,
         container,
+        canvasConfig,
     } = others;
     if (!startPoint || !isDrawing) {
         graphics.clear();
@@ -95,8 +102,12 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
     const end = getPointerPosition(e, container, viewport);
     const lines = (shapes["line"] ?? []) as Line[];
     const points = getPointsFromLines(lines);
-    const updatedStart = getClosestPoint(start, points, GRID_UNIT / 2);
-    const updatedEnd = getClosestPoint(end, points, GRID_UNIT / 2);
+    const updatedStart = getClosestPoint(
+        start,
+        points,
+        canvasConfig.gridSize / 2,
+    );
+    const updatedEnd = getClosestPoint(end, points, canvasConfig.gridSize / 2);
     const line: Line = {
         start: updatedStart,
         end: updatedEnd,
@@ -104,7 +115,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
     };
     const lineExist = getLineFromLines(line, lines);
     const length = roundupNumber(
-        getDistance(line.start, line.end) / GRID_UNIT,
+        getDistance(line.start, line.end) / canvasConfig.gridSize,
         1,
     );
     if (!lineExist && length > 0.1) renderNewLine(line, setDrawingItems);

@@ -3,7 +3,6 @@ import { ToolsType, tools } from "../tools";
 import { Circle, DrawingItem, Line, Pencil, Point } from "./DrawingArea";
 import { useEffect, useRef } from "react";
 import { renderCanvasGrid } from "./renderGrid";
-import { GRID_UNIT, textGraphicsOptions } from "../tools/utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { renderAngleBetweenLines } from "../tools/line";
 import { Viewport } from "pixi-viewport";
@@ -16,6 +15,13 @@ import {
 import { delay } from "../tools/utils/helpers";
 
 export type Shape = Line | Circle | Pencil;
+
+export type CanvasConfig = {
+    gridSize: number;
+    lineWidth: number;
+    textGraphicsOptions: Partial<PIXI.ITextStyle> | PIXI.TextStyle;
+    showSubGrid: boolean;
+};
 
 export type PointerEventsProps = {
     startPoint: Point | null;
@@ -43,6 +49,7 @@ export type PointerEventsProps = {
     pencilPointsRef: React.MutableRefObject<Point[]>;
     viewport: Viewport;
     gridGraphics: SmoothGraphics;
+    canvasConfig: CanvasConfig;
 };
 
 type Props = {
@@ -57,6 +64,10 @@ type Props = {
     setUndoItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
     viewportRef: React.MutableRefObject<Viewport | null>;
     gridGraphics: SmoothGraphics;
+    gridSize: number;
+    lineWidth: number;
+    textGraphicsOptions: Partial<PIXI.ITextStyle> | PIXI.TextStyle;
+    showSubGrid: boolean;
 };
 
 export default function Canvas({
@@ -69,6 +80,10 @@ export default function Canvas({
     setUndoItems,
     viewportRef,
     gridGraphics,
+    gridSize,
+    lineWidth,
+    textGraphicsOptions,
+    showSubGrid,
 }: Props) {
     const containerRef = useRef<HTMLElement | null>(null);
     const startPoint = useRef<Point | null>(null);
@@ -88,6 +103,12 @@ export default function Canvas({
     const originalHeight = 10000; // Initial height of the world
     const maxZoomPercent = 4;
     const minZoomPercent = 0.5;
+    const canvasConfig = {
+        gridSize,
+        lineWidth,
+        textGraphicsOptions,
+        showSubGrid,
+    };
 
     const getProps = (): PointerEventsProps => {
         return {
@@ -117,11 +138,16 @@ export default function Canvas({
                 data[item.type].push(item.data);
                 return data;
             }, {} as Record<ToolsType, Shape[]>),
+            canvasConfig,
         };
     };
 
     async function handlePointNearEdge(e: MouseEvent) {
-        let touchingEdge = isPointerNearEdges(e, containerRef.current!);
+        let touchingEdge = isPointerNearEdges(
+            e,
+            containerRef.current!,
+            canvasConfig.gridSize,
+        );
         let outsideContainer = isPointerOutside(e, containerRef.current!);
         let timeSpent = 5;
 
@@ -144,7 +170,8 @@ export default function Canvas({
 
             const shift = findPointAtDistance(line, -10);
             const distanceFactor =
-                (GRID_UNIT * timeSpent) / (viewportRef.current!.scale.x ?? 1);
+                (canvasConfig.gridSize * timeSpent) /
+                (viewportRef.current!.scale.x ?? 1);
             const deltaX = (start.x - shift.x) / distanceFactor;
             const deltaY = (start.y - shift.y) / distanceFactor;
 
@@ -156,7 +183,12 @@ export default function Canvas({
             // Update the viewport's center position
             viewportRef.current!.moveCenter(newCenter.x, newCenter.y);
             gridGraphics.clear();
-            renderCanvasGrid(viewportRef.current, appRef.current, gridGraphics);
+            renderCanvasGrid(
+                viewportRef.current,
+                appRef.current,
+                gridGraphics,
+                canvasConfig,
+            );
 
             // Wait for a short delay
             await delay(100);
@@ -164,7 +196,11 @@ export default function Canvas({
             timeSpent++;
 
             // Update edge status
-            touchingEdge = isPointerNearEdges(e, containerRef.current!);
+            touchingEdge = isPointerNearEdges(
+                e,
+                containerRef.current!,
+                canvasConfig.gridSize,
+            );
             outsideContainer = isPointerOutside(e, containerRef.current!, -5);
 
             if (outsideContainer) {
@@ -208,6 +244,7 @@ export default function Canvas({
                 item.data as never,
                 viewportRef.current!,
                 graphicsStoreRef,
+                canvasConfig,
             );
         });
         renderAngleBetweenLines(
@@ -217,6 +254,7 @@ export default function Canvas({
             viewportRef.current!,
             graphicsStoreRef,
             pointNumberRef,
+            canvasConfig,
         );
     }
     function handleViewPortZoom(
@@ -231,7 +269,7 @@ export default function Canvas({
             Math.max(minZoomPercent, viewport.scale.x),
         );
         viewport.setZoom(restrictedZoomFactor);
-        renderCanvasGrid(viewport, app, gridGraphics);
+        renderCanvasGrid(viewport, app, gridGraphics, canvasConfig);
     }
 
     function createSetup() {
@@ -290,7 +328,12 @@ export default function Canvas({
 
         viewport.on("moved", () => {
             gridGraphics.clear();
-            renderCanvasGrid(viewport, appRef.current, gridGraphics);
+            renderCanvasGrid(
+                viewport,
+                appRef.current,
+                gridGraphics,
+                canvasConfig,
+            );
         });
 
         zoomIn.onclick = () => {
@@ -324,7 +367,7 @@ export default function Canvas({
 
         setTimeout(() => {
             if (!app || !containerRef.current) return;
-            renderCanvasGrid(viewport, app, gridGraphics);
+            renderCanvasGrid(viewport, app, gridGraphics, canvasConfig);
         }, 100);
     }
 

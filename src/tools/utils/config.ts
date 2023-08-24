@@ -12,12 +12,12 @@ export const isMobile = () => {
 export const GRID_UNIT = 50;
 export const LINE_WIDTH = 5;
 
-
-export const textGraphicsOptions: Partial<PIXI.ITextStyle> | PIXI.TextStyle = {
+export const initialTextGraphicsOptions:
+    | Partial<PIXI.ITextStyle>
+    | PIXI.TextStyle = {
     fontSize:
-        Math.sqrt(GRID_UNIT + LINE_WIDTH) / (isMobile() ? 0.7 : (GRID_UNIT)) +
+        Math.sqrt(GRID_UNIT + LINE_WIDTH) / (isMobile() ? 0.7 : 3) +
         ((35 - 20) * (windowWidth - 320)) / (1920 - 320),
     fontWeight: "600",
     fill: "#000000",
-    // padding: 20,
 };

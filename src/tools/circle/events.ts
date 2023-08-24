@@ -5,16 +5,16 @@ import {
     getPointerPosition,
     getPointsFromLines,
 } from "../utils/calculations";
-import { GRID_UNIT } from "../utils/config";
 import { resetViewport } from "../utils/helpers";
 import { renderCircleWithMeasurements } from "./renderer";
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
-    const { setStartPoint, setIsDrawing, shapes, viewport, container } = others;
+    const { setStartPoint, setIsDrawing, shapes, viewport, container, canvasConfig } =
+        others;
     const start = getPointerPosition(e, container, viewport);
     const lines = shapes["circle"] ?? [];
     const points = getPointsFromLines(lines as Circle[]);
-    const closestPoint = getClosestPoint(start, points, GRID_UNIT / 2);
+    const closestPoint = getClosestPoint(start, points, canvasConfig.gridSize / 2);
     setStartPoint(closestPoint);
     setIsDrawing(true);
 }
@@ -29,10 +29,11 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         graphics,
         shapes,
         container,
-        app
+        app,
+        canvasConfig
     } = others;
     if (!startPoint || !isDrawing) return;
-    resetViewport(e, viewport, app)
+    resetViewport(e, viewport, app);
     const end = getPointerPosition(e, container, viewport);
     graphics.clear();
     textGraphics.text = "";
@@ -41,8 +42,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         { start: startPoint, end, shapeId },
         viewport,
         graphicsStoreRef,
-        graphics,
-        textGraphics,
+        canvasConfig
     );
     viewport.addChild(textGraphics);
     viewport.addChild(graphics);

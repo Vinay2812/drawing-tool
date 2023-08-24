@@ -12,11 +12,10 @@ export function renderPencilGraphics(
     graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
-    graphics?: SmoothGraphics,
 ) {
     const { points } = pencil;
     if (points.length < 1) return;
-    const g = graphics ?? new SmoothGraphics();
+    const g = new SmoothGraphics();
     g.blendMode = PIXI.BLEND_MODES.NORMAL;
     const color = "red";
     g.lineStyle(LINE_WIDTH, color, 1);

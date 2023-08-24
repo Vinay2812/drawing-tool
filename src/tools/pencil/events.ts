@@ -31,7 +31,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         },
         viewport,
         graphicsStoreRef,
-        graphics,
     );
 }
 

@@ -1,6 +1,4 @@
 import { PointerEventsProps } from "./../../components/Canvas";
-import * as PIXI from "pixi.js";
-import { GRID_UNIT } from "../utils/config";
 import { type Line } from "../../components/DrawingArea";
 import {
     getClosestPoint,
@@ -12,37 +10,7 @@ import {
     getLineFromLines,
 } from "../utils/calculations";
 import { renderLineGraphics, renderAngleBetweenLines } from "../line/renderers";
-import { SmoothGraphics } from "@pixi/graphics-smooth";
-import { getAngleKey, getLineKey } from "../utils/keys";
-import { Viewport } from "pixi-viewport";
 
-export function removeAngleGraphics(
-    lines: Line[],
-    removingLine: Line,
-    viewport: Viewport,
-    graphicsStoreRef: React.MutableRefObject<
-        Record<string, (SmoothGraphics | PIXI.Text)[]>
-    >,
-) {
-    for (const line of lines) {
-        if (areSameLines(line, removingLine)) continue;
-        const key1: string = getAngleKey(line, removingLine);
-        const key2: string = getAngleKey(removingLine, line);
-        graphicsStoreRef.current[key1]?.forEach((g) => viewport.removeChild(g));
-        graphicsStoreRef.current[key2]?.forEach((g) => viewport.removeChild(g));
-    }
-}
-
-export function removeLineGraphics(
-    line: Line,
-    graphicsStoreRef: React.MutableRefObject<
-        Record<string, (SmoothGraphics | PIXI.Text)[]>
-    >,
-    viewport: Viewport,
-) {
-    const key = getLineKey(line);
-    graphicsStoreRef.current[key]?.forEach((g) => viewport.removeChild(g));
-}
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
     const {
@@ -52,14 +20,12 @@ export function onDown(e: MouseEvent, others: PointerEventsProps) {
         setIsDrawing,
         setSelectedPoint,
         shapes,
+        canvasConfig
     } = others;
-    // setStartPoint(getPointerPosition(e, container, viewport));
     const lines = (shapes["line"] ?? []) as Line[];
     const clickedPoint = getPointerPosition(e, container, viewport);
     const points = getPointsFromLines(lines);
-    const endPoint = getClosestPoint(clickedPoint, points, GRID_UNIT / 2);
-    console.log("points", points, endPoint)
-    // viewport.plugins.resume("drag");
+    const endPoint = getClosestPoint(clickedPoint, points, canvasConfig.gridSize / 2);
     const isSinglePoint = isPointAppearingOnce(endPoint, points);
     if (isSinglePoint) {
         viewport.plugins.pause("drag");
@@ -75,7 +41,6 @@ export function onDown(e: MouseEvent, others: PointerEventsProps) {
                 : clickedLine.start;
             setSelectedPoint(endPoint);
             setStartPoint(fixedPoint);
-            // console.log("clickedLine", clickedLine, fixedPoint);
             setIsDrawing(true);
             return;
         }
@@ -96,6 +61,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         pointNumberRef,
         shapes,
         container,
+        canvasConfig
     } = others;
     if (!startPoint || !isDrawing || !selectedPoint) {
         return;
@@ -118,19 +84,17 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
             newLine,
             viewport,
             graphicsStoreRef,
-            graphics,
-            textGraphics,
+            canvasConfig
         );
         const filteredLines = lines.filter(
             (line) => !areSameLines(line, removingLine),
         );
-        removeAngleGraphics(lines, removingLine, viewport, graphicsStoreRef);
-        removeLineGraphics(removingLine, graphicsStoreRef, viewport);
         renderAngleBetweenLines(
             [...filteredLines, newLine],
             viewport,
             graphicsStoreRef,
             pointNumberRef,
+            canvasConfig
         );
 
         viewport.addChild(textGraphics);
@@ -153,6 +117,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         setStartPoint,
         shapes,
         container,
+        canvasConfig
     } = others;
     if (!startPoint || !isDrawing || !selectedPoint) {
         return;
@@ -175,7 +140,7 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
             (line) => !areSameLines(line, removingLine),
         );
         const filteredPoints = getPointsFromLines(filteredLines);
-        const updatedEnd = getClosestPoint(end, filteredPoints, GRID_UNIT / 2);
+        const updatedEnd = getClosestPoint(end, filteredPoints, canvasConfig.gridSize / 2);
 
         const newLine: Line = {
             start,
@@ -185,7 +150,6 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
 
         setStartPoint(null);
         setIsDrawing(false);
-        removeAngleGraphics(lines, removingLine, viewport, graphicsStoreRef);
         let isNewLine = true;
         for (const line of lines) {
             if (

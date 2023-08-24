@@ -8,7 +8,6 @@ import {
     roundupNumber,
 } from "../tools/utils/calculations";
 import { ShapeData } from "../components/DrawingArea";
-import { GRID_UNIT } from "../tools/utils/config";
 
 let visitedArr: boolean[] = [];
 let graph: number[][] = [];
@@ -82,7 +81,7 @@ function getDuplicateNumber(arr: number[]) {
     return -1;
 }
 
-export function getShapesData(lines: Line[]) {
+export function getShapesData(lines: Line[], gridSize: number) {
     const uniquePoints = getUniquePoints(lines);
     createGraph(uniquePoints, lines);
     stack = [];
@@ -135,7 +134,7 @@ export function getShapesData(lines: Line[]) {
                     start,
                     end,
                     distance: roundupNumber(
-                        getDistance(start, end) / GRID_UNIT,
+                        getDistance(start, end) / gridSize,
                         1,
                     ),
                     shapeId: idx + 1,
@@ -167,7 +166,7 @@ export function getShapesData(lines: Line[]) {
                 start: line1.start,
                 end: line1.end,
                 distance: roundupNumber(
-                    getDistance(line1.start, line1.end) / GRID_UNIT,
+                    getDistance(line1.start, line1.end) / gridSize,
                     1,
                 ),
                 shapeId: idx + 1,

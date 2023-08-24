@@ -1,29 +1,27 @@
 import * as PIXI from "pixi.js";
-import {
-    GRID_UNIT,
-    LINE_WIDTH,
-    textGraphicsOptions,
-} from "../tools/utils/config";
 import { getMidpoint } from "../tools/utils/calculations";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { renderPoint } from "../tools/line";
 import { Viewport } from "pixi-viewport";
 import { Line } from "./DrawingArea";
+import { CanvasConfig } from "./Canvas";
+import { initialTextGraphicsOptions } from "../tools/utils/config";
 
-const textGraphics = new PIXI.Text("1 cm", textGraphicsOptions);
+const textGraphics = new PIXI.Text("1 cm", initialTextGraphicsOptions);
 // textGraphics.resolution = 8;
 
 export function renderCanvasGrid(
     viewport: Viewport | null,
     app: PIXI.Application<HTMLCanvasElement> | null,
     gridGraphics: SmoothGraphics,
+    config: CanvasConfig
     // showSubgrid = false,
 ) {
     if (!viewport || !app) return;
     gridGraphics.clear();
     viewport.removeChild(gridGraphics);
 
-    const gridSize = GRID_UNIT;
+    const gridSize = config.gridSize;
     const gridColor = "black"; // Grid line color
     const gridAlpha = 0.8; // Grid line opacity
 
@@ -98,7 +96,7 @@ export function renderCanvasGrid(
     };
 
     if (viewport.scale.x < 2 && viewport.scale.y < 2) {
-        renderGridUnit(viewport, app, line, gridGraphics);
+        renderGridUnit(viewport, app, line, gridGraphics, config);
     } else {
         app.stage.removeChild(textGraphics);
     }
@@ -109,12 +107,13 @@ export function renderGridUnit(
     app: PIXI.Application<HTMLCanvasElement>,
     line: Line,
     lineGraphics: SmoothGraphics,
+    config: CanvasConfig
 ) {
     // const lineGraphics = new SmoothGraphics();
     app.stage.removeChild(textGraphics);
     const { start, end } = line;
     const zoomFactor = viewport.scale.x;
-    lineGraphics.lineStyle(LINE_WIDTH * zoomFactor, "blue", 1);
+    lineGraphics.lineStyle(config.lineWidth * zoomFactor, "blue", 1);
     lineGraphics.moveTo(start.x, start.y);
     lineGraphics.lineTo(end.x, end.y);
     renderPoint(lineGraphics, start, 4 * zoomFactor, "blue");
@@ -126,5 +125,5 @@ export function renderGridUnit(
     app.stage.addChild(lineGraphics);
     app.stage.addChild(textGraphics);
     textGraphics.scale = new PIXI.Point(viewport.scale.x, viewport.scale.y);
-    textGraphics.resolution = 4;
+    textGraphics.resolution = 1 + viewport.scale.x;
 }

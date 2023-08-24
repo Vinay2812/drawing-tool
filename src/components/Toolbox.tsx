@@ -1,7 +1,7 @@
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { type ToolsType, tools } from "../tools";
 import * as PIXI from "pixi.js";
-import { DrawingItem, Point } from "./DrawingArea";
+import { DrawingItem } from "./DrawingArea";
 import { isMobile } from "../tools/utils/config";
 import { Viewport } from "pixi-viewport";
 

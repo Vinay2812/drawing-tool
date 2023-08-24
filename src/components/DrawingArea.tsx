@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as PIXI from "pixi.js";
 import Toolbox from "./Toolbox";
 import { lazy, useEffect, useMemo, useRef, useState } from "react";
@@ -6,6 +7,13 @@ import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getShapesData } from "../utils/shapes";
 import { getDistance } from "../tools/utils/calculations";
 import { Viewport } from "pixi-viewport";
+import {
+    GRID_UNIT,
+    LINE_WIDTH,
+    initialTextGraphicsOptions,
+    isMobile,
+} from "../tools/utils/config";
+import { cn } from "../utils/helper";
 const Canvas = lazy(() => import("./Canvas"));
 
 export type Point = {
@@ -81,17 +89,34 @@ export default function DrawingArea() {
     const pointNumberRef = useRef<number>(0);
     const [shapesData, setShapesData] = useState<ShapeData[]>([]);
     const gridGraphics = useMemo(() => {
-        return new SmoothGraphics()
+        return new SmoothGraphics();
     }, []);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [hiddenTools, setHiddenTools] = useState<ToolsType[]>(["circle"]);
+    const [gridSize, setGridSize] = useState(GRID_UNIT);
+    const [lineWidth, setLineWidth] = useState(LINE_WIDTH);
+    const [showSubGrid, setShowSubGrid] = useState(false);
+    const [textGraphicsOptions, setTextGraphicsOptions] = useState<
+        Partial<PIXI.ITextStyle> | PIXI.TextStyle
+    >({
+        fill: "#000",
+        fontWeight: "600",
+        fontSize:
+        Math.sqrt(gridSize + lineWidth) / (isMobile() ? 0.7 : 3) +
+        ((35 - 20) * (window.innerWidth - 320)) / (1920 - 320),
+    });
+    // const [canvasWidth, setCanvasWidth] = useState(
+    //     Math.min(window.innerWidth, 800),
+    // );
+    // const [canvasHeight, setCanvasHeight] = useState(600);
+    const canvasWidth = Math.min(window.innerWidth, 800);
+    const canvasHeight = 600;
 
     function handleSubmit() {
         const lines = drawingItems
             .filter((item) => item.type === "line")
             .map((item) => item.data) as Line[];
 
-        const combinedLines = getShapesData(lines);
+        const combinedLines = getShapesData(lines, gridSize);
         const circles: ShapeData[] = drawingItems
             .filter(({ type }) => type === "circle")
             .map((item) => {
@@ -108,16 +133,12 @@ export default function DrawingArea() {
             });
         setShapesData([...combinedLines, ...circles]);
     }
+
     useEffect(() => {
-        // console.log("shapes data", shapesData)
         shapesData.forEach((shape, idx) => {
             console.log(`${shape.type}-${idx + 1}`, shape.data);
         });
     }, [shapesData]);
-
-    const canvasWidth = Math.min(window.innerWidth, 800);
-    // const canvasHeight = 2 * window.innerHeight;
-    const canvasHeight = 600;
 
     return (
         <div className="flex flex-col items-center">
@@ -136,17 +157,20 @@ export default function DrawingArea() {
                 appRef={appRef}
                 viewportRef={viewportRef}
                 hiddenTools={hiddenTools}
-                className={`flex gap-2 justify-between py-4 h-[72px] w-[${
-                    canvasWidth - 20
-                }px] bg-white`}
+                className={cn(
+                    "flex gap-2 justify-between py-4 h-[72px]",
+                    `w-[${canvasWidth - 20}px]`,
+                    "bg-white",
+                )}
             />
             <div
                 id="canvas-container"
-                className={`w-[${canvasWidth - 20}px] h-[${
-                    canvasHeight - 1
-                }px] ${
-                    tools[activeTool].cursor
-                } bg-white outline outline-1 outline-gray-400 overflow-clip relative`}
+                className={cn(
+                    `!w-[${canvasWidth - 20}px]`,
+                    `!h-[${canvasHeight - 1}px]`,
+                    `${tools[activeTool].cursor}`,
+                    "bg-white outline outline-1 outline-gray-400 overflow-clip relative",
+                )}
             >
                 <div className="absolute right-2 top-2 flex flex-col gap-1">
                     <button
@@ -172,7 +196,7 @@ export default function DrawingArea() {
                     </button>
                     <button
                         className="bg-slate-300 p-2 hover:bg-slate-200"
-                    id="zoom-out"
+                        id="zoom-out"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -203,6 +227,10 @@ export default function DrawingArea() {
                 viewportRef={viewportRef}
                 setUndoItems={setUndoItems}
                 gridGraphics={gridGraphics}
+                gridSize={gridSize}
+                showSubGrid={showSubGrid}
+                lineWidth={lineWidth}
+                textGraphicsOptions={textGraphicsOptions}
             />
             <button
                 className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4 disabled:bg-red-300 disabled:cursor-not-allowed"
