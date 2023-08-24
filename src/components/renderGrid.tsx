@@ -81,8 +81,8 @@ export function renderCanvasGrid(
         }
     }
     // if (!initialX && !initialY) {
-    const initialX = startX + (isMobile() ? 2 : 1) * effectiveGridSize;
-    const initialY = startY + (isMobile() ? 2 : 1) * effectiveGridSize;
+    const initialX = startX + (isMobile() ? 1 : 1) * effectiveGridSize;
+    const initialY = startY + (isMobile() ? 1 : 1) * effectiveGridSize;
     // }
     const line: Line = {
         start: {
