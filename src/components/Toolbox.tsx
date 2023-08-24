@@ -17,17 +17,18 @@ export type ToolboxProps = {
     >;
     pointNumberRef: React.MutableRefObject<number>;
     appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>;
-    viewportRef: React.MutableRefObject<Viewport | null>
+    viewportRef: React.MutableRefObject<Viewport | null>;
+    hiddenTools: ToolsType[];
 };
 
 export default function Toolbox(
     props: ToolboxProps & React.HTMLAttributes<HTMLDivElement>,
 ) {
     const leftTools = Object.entries(tools).filter((tool) => {
-        return tool[1].isLeft;
+        return tool[1].isLeft && !props.hiddenTools.includes(tool[1].name);
     });
     const rightTools = Object.entries(tools).filter((tool) => {
-        return !tool[1].isLeft;
+        return !tool[1].isLeft && !props.hiddenTools.includes(tool[1].name);
     });
     function isToolDisabled(toolName: ToolsType) {
         const { undoItems, drawingItems } = props;
@@ -72,9 +73,10 @@ export default function Toolbox(
                             onClick={() =>
                                 tools[toolName as ToolsType].onClick(props)
                             }
-                            className={`text-white p-2 cursor-pointer border-gray-500 outline outline-2 ${!isMobile() && "hover:outline-gray-200 hover:bg-gray-200 hover:rounded-full"} ${
-                                isActive ? "bg-white" : "bg-transparent"
-                            } ${
+                            className={`text-white p-2 cursor-pointer border-gray-500 outline outline-2 ${
+                                !isMobile() &&
+                                "hover:outline-gray-200 hover:bg-gray-200 hover:rounded-full"
+                            } ${isActive ? "bg-white" : "bg-transparent"} ${
                                 disabled &&
                                 "disabled:cursor-not-allowed disabled:bg-transparent disabled:outline-none"
                             }`}

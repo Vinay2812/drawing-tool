@@ -83,12 +83,7 @@ export default function DrawingArea() {
     const gridGraphics = useMemo(() => {
         return new SmoothGraphics()
     }, []);
-
-    // useEffect(() => {
-    //     if (!gridGraphicsRef.current) {
-    //         gridGraphicsRef.current = new SmoothGraphics()
-    //     }
-    // }, [])
+    const [hiddenTools, setHiddenTools] = useState<ToolsType[]>(["circle"])
 
     function handleSubmit() {
         const lines = drawingItems
@@ -139,6 +134,7 @@ export default function DrawingArea() {
                 pointNumberRef={pointNumberRef}
                 appRef={appRef}
                 viewportRef={viewportRef}
+                hiddenTools={hiddenTools}
                 className={`flex gap-2 justify-between py-4 h-[72px] w-[${
                     canvasWidth - 20
                 }px] bg-white`}
