@@ -26,7 +26,7 @@ import {
     getPointFromPointKey,
 } from "../utils/keys";
 import { Viewport } from "pixi-viewport";
-import { CanvasConfig } from "../../components/Canvas";
+import { CanvasConfig } from "../../components/DrawingArea";
 
 export function renderPoint(
     graphics: SmoothGraphics,
@@ -60,11 +60,11 @@ export function renderDistanceOnLine(
 ) {
     const { start, end } = line;
     const distance = getDistance(start, end);
-    textGraphics.text = `${roundupNumber(distance / config.gridSize)} cm`;
+    textGraphics.text = `${roundupNumber(distance / config.gridSize)} ${config.unit}`;
     // const textWidth =
     let p1 = start;
     let p2 = end;
-    let gap = config.gridSize / 3.5 + config.lineWidth * 1.2;
+    let gap = config.gridSize / (isMobile() ? 3.5 : 2.75) + config.lineWidth * 1.2;
 
     if ((p2.x < p1.x && p2.y < p1.y) || (p2.x < p1.x && p2.y > p1.y)) {
         p1 = end;

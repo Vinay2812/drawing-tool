@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { ToolsType, tools } from "../tools";
-import { Circle, DrawingItem, Line, Pencil, Point } from "./DrawingArea";
+import { CanvasConfig, Circle, DrawingItem, Line, Pencil, Point } from "./DrawingArea";
 import { useEffect, useRef } from "react";
 import { renderCanvasGrid } from "./renderGrid";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
@@ -15,13 +15,6 @@ import {
 import { delay } from "../tools/utils/helpers";
 
 export type Shape = Line | Circle | Pencil;
-
-export type CanvasConfig = {
-    gridSize: number;
-    lineWidth: number;
-    textGraphicsOptions: Partial<PIXI.ITextStyle> | PIXI.TextStyle;
-    showSubGrid: boolean;
-};
 
 export type PointerEventsProps = {
     startPoint: Point | null;
@@ -68,6 +61,9 @@ type Props = {
     lineWidth: number;
     textGraphicsOptions: Partial<PIXI.ITextStyle> | PIXI.TextStyle;
     showSubGrid: boolean;
+    canvasWidth: number;
+    canvasHeight: number;
+    unit: string;
 };
 
 export default function Canvas({
@@ -84,6 +80,9 @@ export default function Canvas({
     lineWidth,
     textGraphicsOptions,
     showSubGrid,
+    canvasWidth,
+    canvasHeight,
+    unit,
 }: Props) {
     const containerRef = useRef<HTMLElement | null>(null);
     const startPoint = useRef<Point | null>(null);
@@ -108,6 +107,7 @@ export default function Canvas({
         lineWidth,
         textGraphicsOptions,
         showSubGrid,
+        unit,
     };
 
     const getProps = (): PointerEventsProps => {
@@ -283,8 +283,8 @@ export default function Canvas({
             container.querySelector<HTMLButtonElement>("#zoom-out")!;
 
         const app = new PIXI.Application<HTMLCanvasElement>({
-            width: window.innerWidth,
-            height: window.innerHeight,
+            width: canvasWidth,
+            height: canvasHeight,
             backgroundColor: "transparent", // Background color
             backgroundAlpha: 0,
             antialias: true,
@@ -296,8 +296,8 @@ export default function Canvas({
         const viewport = new Viewport({
             worldWidth: originalWidth,
             worldHeight: originalHeight,
-            screenWidth: window.innerWidth,
-            screenHeight: window.innerHeight,
+            screenWidth: canvasWidth,
+            screenHeight: canvasHeight,
             events: app.renderer.events,
         })
             .pinch({
@@ -411,7 +411,7 @@ export default function Canvas({
             removeEventListeners();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTool]);
+    }, [activeTool, canvasWidth, canvasHeight]);
 
     useEffect(() => {
         itemsRef.current = drawingItems;

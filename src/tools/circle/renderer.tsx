@@ -4,7 +4,7 @@ import { Circle, Point } from "../../components/DrawingArea";
 import * as PIXI from "pixi.js";
 import { renderDistanceOnLine, renderLine } from "../line";
 import { Viewport } from "pixi-viewport";
-import { CanvasConfig } from "../../components/Canvas";
+import { CanvasConfig } from "../../components/DrawingArea";
 
 export function renderCircle(
     start: Point,

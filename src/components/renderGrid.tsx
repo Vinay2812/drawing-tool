@@ -4,23 +4,24 @@ import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { renderPoint } from "../tools/line";
 import { Viewport } from "pixi-viewport";
 import { Line } from "./DrawingArea";
-import { CanvasConfig } from "./Canvas";
-import { initialTextGraphicsOptions } from "../tools/utils/config";
+import { CanvasConfig } from "./DrawingArea";
+import { isMobile } from "../tools/utils/config";
 
-const textGraphics = new PIXI.Text("1 cm", initialTextGraphicsOptions);
+let textGraphics: PIXI.Text | null = null;
 // textGraphics.resolution = 8;
 
 export function renderCanvasGrid(
     viewport: Viewport | null,
     app: PIXI.Application<HTMLCanvasElement> | null,
     gridGraphics: SmoothGraphics,
-    config: CanvasConfig
-    // showSubgrid = false,
+    config: CanvasConfig,
 ) {
     if (!viewport || !app) return;
     gridGraphics.clear();
     viewport.removeChild(gridGraphics);
-
+    if (!textGraphics) {
+        textGraphics = new PIXI.Text(`1 ${config.unit}`, config.textGraphicsOptions);
+    }
     const gridSize = config.gridSize;
     const gridColor = "black"; // Grid line color
     const gridAlpha = 0.8; // Grid line opacity
@@ -64,24 +65,24 @@ export function renderCanvasGrid(
         gridGraphics.moveTo(0, y);
         gridGraphics.lineTo(app.renderer.screen.width, y);
     }
-    // if (showSubgrid) {
-    //     const subGridSize = GRID_UNIT / 5;
-    //     const subGridAlpha = 0.1;
-    //     for (let x = 0; x < viewport.worldWidth; x += subGridSize) {
-    //         gridGraphics.lineStyle(1, gridColor, subGridAlpha);
-    //         gridGraphics.moveTo(x, 0);
-    //         gridGraphics.lineTo(x, viewport.worldHeight);
-    //     }
+    if (config.showSubGrid) {
+        const subGridSize = effectiveGridSize / 5;
+        const subGridAlpha = 0.1;
+        for (let x = startX; x < endX; x += subGridSize) {
+            gridGraphics.lineStyle(1, gridColor, subGridAlpha);
+            gridGraphics.moveTo(x, 0);
+            gridGraphics.lineTo(x, viewport.worldHeight);
+        }
 
-    //     for (let y = 0; y < viewport.worldHeight; y += subGridSize) {
-    //         gridGraphics.lineStyle(1, gridColor, subGridAlpha);
-    //         gridGraphics.moveTo(0, y);
-    //         gridGraphics.lineTo(viewport.worldWidth, y);
-    //     }
-    // }
+        for (let y = startY; y < endY; y += subGridSize) {
+            gridGraphics.lineStyle(1, gridColor, subGridAlpha);
+            gridGraphics.moveTo(0, y);
+            gridGraphics.lineTo(viewport.worldWidth, y);
+        }
+    }
     // if (!initialX && !initialY) {
-    const initialX = startX + effectiveGridSize;
-    const initialY = startY + effectiveGridSize;
+    const initialX = startX + (isMobile() ? 2 : 1) * effectiveGridSize;
+    const initialY = startY + (isMobile() ? 2 : 1) * effectiveGridSize;
     // }
     const line: Line = {
         start: {
@@ -107,9 +108,12 @@ export function renderGridUnit(
     app: PIXI.Application<HTMLCanvasElement>,
     line: Line,
     lineGraphics: SmoothGraphics,
-    config: CanvasConfig
+    config: CanvasConfig,
 ) {
     // const lineGraphics = new SmoothGraphics();
+    if (!textGraphics) {
+        textGraphics = new PIXI.Text("1 cm", config.textGraphicsOptions);
+    }
     app.stage.removeChild(textGraphics);
     const { start, end } = line;
     const zoomFactor = viewport.scale.x;

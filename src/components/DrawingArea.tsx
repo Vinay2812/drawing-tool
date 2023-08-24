@@ -77,7 +77,24 @@ export type ShapeData =
           data: PolygonData;
       };
 
-export default function DrawingArea() {
+export interface CanvasConfig {
+    gridSize: number;
+    lineWidth: number;
+    textGraphicsOptions: Partial<PIXI.ITextStyle> | PIXI.TextStyle;
+    showSubGrid: boolean;
+    unit: string;
+}
+
+export type DrawingAreaConfig = Omit<
+    Omit<CanvasConfig, "textGraphicsOptions">,
+    "lineWidth"
+> & {
+    canvasWidth: number;
+    canvasHeight: number;
+    hiddenTools: ToolsType[];
+};
+
+export default function DrawingArea(props: DrawingAreaConfig) {
     const appRef = useRef<PIXI.Application<HTMLCanvasElement> | null>(null);
     const viewportRef = useRef<Viewport | null>(null);
     const [activeTool, setActiveTool] = useState<ToolsType>("select");
@@ -91,32 +108,34 @@ export default function DrawingArea() {
     const gridGraphics = useMemo(() => {
         return new SmoothGraphics();
     }, []);
-    const [hiddenTools, setHiddenTools] = useState<ToolsType[]>(["circle"]);
-    const [gridSize, setGridSize] = useState(GRID_UNIT);
-    const [lineWidth, setLineWidth] = useState(LINE_WIDTH);
-    const [showSubGrid, setShowSubGrid] = useState(false);
-    const [textGraphicsOptions, setTextGraphicsOptions] = useState<
+    // const [hiddenTools, setHiddenTools] = useState<ToolsType[]>(["circle"]);
+    // const [gridSize, setGridSize] = useState(GRID_UNIT);
+    const lineWidth = useMemo(() => LINE_WIDTH, []);
+    // const [showSubGrid, setShowSubGrid] = useState(false);
+    const textGraphicsOptions = useMemo<
         Partial<PIXI.ITextStyle> | PIXI.TextStyle
-    >({
-        fill: "#000",
-        fontWeight: "600",
-        fontSize:
-        Math.sqrt(gridSize + lineWidth) / (isMobile() ? 0.7 : 3) +
-        ((35 - 20) * (window.innerWidth - 320)) / (1920 - 320),
-    });
+    >(
+        () => ({
+            fill: "#000",
+            fontWeight: "600",
+            fontSize:
+                Math.sqrt(props.gridSize + lineWidth) / (isMobile() ? 0.7 : 3) +
+                ((35 - 20) * (window.innerWidth - 320)) / (1920 - 320),
+        }),
+        [props.gridSize, lineWidth],
+    );
+    // const [unit, setUnit] = useState("cm");
     // const [canvasWidth, setCanvasWidth] = useState(
     //     Math.min(window.innerWidth, 800),
     // );
     // const [canvasHeight, setCanvasHeight] = useState(600);
-    const canvasWidth = Math.min(window.innerWidth, 800);
-    const canvasHeight = 600;
 
     function handleSubmit() {
         const lines = drawingItems
             .filter((item) => item.type === "line")
             .map((item) => item.data) as Line[];
 
-        const combinedLines = getShapesData(lines, gridSize);
+        const combinedLines = getShapesData(lines, props.gridSize);
         const circles: ShapeData[] = drawingItems
             .filter(({ type }) => type === "circle")
             .map((item) => {
@@ -156,21 +175,29 @@ export default function DrawingArea() {
                 pointNumberRef={pointNumberRef}
                 appRef={appRef}
                 viewportRef={viewportRef}
-                hiddenTools={hiddenTools}
+                hiddenTools={props.hiddenTools}
                 className={cn(
                     "flex gap-2 justify-between py-4 h-[72px]",
-                    `w-[${canvasWidth - 20}px]`,
+                    `w-[${props.canvasWidth - 20}px]`,
                     "bg-white",
                 )}
+                style={{
+                    width: props.canvasWidth - 20,
+                    height: 72,
+                }}
             />
             <div
                 id="canvas-container"
                 className={cn(
-                    `!w-[${canvasWidth - 20}px]`,
-                    `!h-[${canvasHeight - 1}px]`,
+                    `!w-[${props.canvasWidth - 20}px]`,
+                    `!h-[${props.canvasHeight - 1}px]`,
                     `${tools[activeTool].cursor}`,
-                    "bg-white outline outline-1 outline-gray-400 overflow-clip relative",
+                    "bg-white outline outline-1 outline-gray-400 !overflow-hidden relative",
                 )}
+                style={{
+                    width: props.canvasWidth - 20,
+                    height: props.canvasHeight - 1,
+                }}
             >
                 <div className="absolute right-2 top-2 flex flex-col gap-1">
                     <button
@@ -227,10 +254,13 @@ export default function DrawingArea() {
                 viewportRef={viewportRef}
                 setUndoItems={setUndoItems}
                 gridGraphics={gridGraphics}
-                gridSize={gridSize}
-                showSubGrid={showSubGrid}
+                gridSize={props.gridSize}
+                showSubGrid={props.showSubGrid}
                 lineWidth={lineWidth}
                 textGraphicsOptions={textGraphicsOptions}
+                canvasWidth={props.canvasWidth - 20}
+                canvasHeight={props.canvasHeight - 1}
+                unit={props.unit}
             />
             <button
                 className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4 disabled:bg-red-300 disabled:cursor-not-allowed"
