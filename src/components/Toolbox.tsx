@@ -1,7 +1,7 @@
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { type ToolsType, tools } from "../tools";
 import * as PIXI from "pixi.js";
-import { DrawingItem } from "./DrawingArea";
+import { DrawingItem, Point } from "./DrawingArea";
 import { isMobile } from "../tools/utils/config";
 import { Viewport } from "pixi-viewport";
 
@@ -19,6 +19,7 @@ export type ToolboxProps = {
     appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>;
     viewportRef: React.MutableRefObject<Viewport | null>;
     hiddenTools: ToolsType[];
+    angleCacheRef: React.MutableRefObject<Record<string, Point[]>>
 };
 
 export default function Toolbox(

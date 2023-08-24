@@ -43,6 +43,7 @@ export type PointerEventsProps = {
     pencilPointsRef: React.MutableRefObject<Point[]>;
     viewport: Viewport;
     gridGraphics: SmoothGraphics;
+    anglesCacheRef: React.MutableRefObject<Record<string, Point[]>>;
 };
 
 type Props = {
@@ -57,6 +58,7 @@ type Props = {
     setUndoItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
     viewportRef: React.MutableRefObject<Viewport | null>;
     gridGraphics: SmoothGraphics;
+    anglesCacheRef: React.MutableRefObject<Record<string, Point[]>>;
 };
 
 export default function Canvas({
@@ -69,6 +71,7 @@ export default function Canvas({
     setUndoItems,
     viewportRef,
     gridGraphics,
+    anglesCacheRef,
 }: Props) {
     const containerRef = useRef<HTMLElement | null>(null);
     const startPoint = useRef<Point | null>(null);
@@ -117,15 +120,16 @@ export default function Canvas({
                 data[item.type].push(item.data);
                 return data;
             }, {} as Record<ToolsType, Shape[]>),
+            anglesCacheRef,
         };
     };
 
     async function handlePointNearEdge(e: MouseEvent) {
         let touchingEdge = isPointerNearEdges(e, containerRef.current!);
         let outsideContainer = isPointerOutside(e, containerRef.current!);
-        let timeSpent = 3;
+        let timeSpent = 5;
 
-        while (touchingEdge && !outsideContainer) {
+        while (touchingEdge && !outsideContainer && timeSpent < 100) {
             const endPoint = getPointerPosition(
                 e,
                 containerRef.current!,
@@ -155,13 +159,13 @@ export default function Canvas({
 
             // Update the viewport's center position
             viewportRef.current!.moveCenter(newCenter.x, newCenter.y);
-            gridGraphics.clear()
+            gridGraphics.clear();
             renderCanvasGrid(viewportRef.current, appRef.current, gridGraphics);
 
             // Wait for a short delay
             await delay(100);
 
-            timeSpent += 1;
+            timeSpent++;
 
             // Update edge status
             touchingEdge = isPointerNearEdges(e, containerRef.current!);
@@ -217,7 +221,6 @@ export default function Canvas({
             viewportRef.current!,
             graphicsStoreRef,
             pointNumberRef,
-            graphics,
         );
     }
     function handleViewPortZoom(
@@ -268,13 +271,13 @@ export default function Canvas({
                 noDrag: true,
                 factor: 1,
                 percent: 1,
-                axis: "all",
+                axis: "x",
             })
             .wheel()
-            // .decelerate()
             .drag({
                 wheel: false,
             });
+        // .decelerate();
 
         app.renderer.render(app.stage);
         app.ticker.start();

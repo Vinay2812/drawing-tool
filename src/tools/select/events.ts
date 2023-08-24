@@ -15,7 +15,6 @@ import { renderLineGraphics, renderAngleBetweenLines } from "../line/renderers";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getAngleKey, getLineKey } from "../utils/keys";
 import { Viewport } from "pixi-viewport";
-import { renderCanvasGrid } from "../../components/renderGrid";
 
 export function removeAngleGraphics(
     lines: Line[],
@@ -97,31 +96,8 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         pointNumberRef,
         shapes,
         container,
-        app,
-        gridGraphics,
-        setStartPoint,
+        anglesCacheRef
     } = others;
-    if (startPoint && !isDrawing) {
-        // const { marginLeft = "0", marginTop = "0" } = container.style;
-        // const currPos = getPointerPosition(e, container, viewport);
-        // const deltaX = currPos.x - startPoint.x;
-        // const deltaY = currPos.y - startPoint.y;
-        // // Update the viewport's center position based on the drag
-        // const scrollSpeed = 1; // Adjust as needed
-        // const movementX = -deltaX * scrollSpeed; // Invert to simulate drag scroll
-        // const movementY = -deltaY * scrollSpeed;
-        // // viewport.moveCenter(
-        // //     viewport.center.x + movementX,
-        // //     viewport.center.y + movementY,
-        // // );
-        // container.style.marginLeft = `${parseFloat(marginLeft) + movementX}`;
-        // container.style.marginTop = `${parseFloat(marginTop) + movementY}`;
-        // app.screen.pad(movementX, movementX)
-        // // renderCanvasGrid(viewport, app, gridGraphics)
-        // // ... (Update viewport dimensions and position as needed)
-        // // Update start drag positions for the next event
-        // setStartPoint(currPos);
-    }
     if (!startPoint || !isDrawing || !selectedPoint) {
         return;
     }

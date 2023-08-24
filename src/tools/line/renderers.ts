@@ -154,7 +154,6 @@ function renderAngleWithLabelGraphics(
         0,
         controlPointFactor,
     )!;
-    console.log("controlPoint")
     if (!controlPoint) return;
 
     // Create a Graphics object to draw the arc
@@ -191,7 +190,7 @@ function renderAngleWithLabelGraphics(
                 textGraphicsOptions,
             ),
         ];
-        pointNumberRef.current = pointNumberRef.current + 1;
+        pointNumberRef.current = (pointNumberRef.current + 1) % 26;
         viewport.addChild(graphicsStoreRef.current[labelKey][0] as PIXI.Text);
     }
     const labelGraphics = graphicsStoreRef.current[labelKey][0] as PIXI.Text;
@@ -207,8 +206,6 @@ export function renderAngleBetweenLines(
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >,
     pointNumberRef: React.MutableRefObject<number>,
-    graphics?: SmoothGraphics,
-    angleTextGraphics?: PIXI.Text,
 ) {
     const commonPointMap = getCommonPointsMap(lines);
     const angleGraphicsKeys = Object.keys(graphicsStoreRef.current).filter(
@@ -263,9 +260,8 @@ export function renderAngleBetweenLines(
             }
 
             totalAngleSum += angleDegrees;
-            const g = graphics ?? new SmoothGraphics();
-            const atg =
-                angleTextGraphics ?? new PIXI.Text("", textGraphicsOptions);
+            const g = new SmoothGraphics();
+            const atg = new PIXI.Text("", textGraphicsOptions);
             atg.resolution = 4;
 
             renderAngleWithLabelGraphics(

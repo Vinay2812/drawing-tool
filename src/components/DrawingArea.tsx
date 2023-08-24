@@ -83,7 +83,9 @@ export default function DrawingArea() {
     const gridGraphics = useMemo(() => {
         return new SmoothGraphics()
     }, []);
-    const [hiddenTools, setHiddenTools] = useState<ToolsType[]>(["circle"])
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [hiddenTools, setHiddenTools] = useState<ToolsType[]>(["circle"]);
+    const anglesCacheRef = useRef<Record<string, Point[]>>({})
 
     function handleSubmit() {
         const lines = drawingItems
@@ -135,6 +137,7 @@ export default function DrawingArea() {
                 appRef={appRef}
                 viewportRef={viewportRef}
                 hiddenTools={hiddenTools}
+                angleCacheRef={anglesCacheRef}
                 className={`flex gap-2 justify-between py-4 h-[72px] w-[${
                     canvasWidth - 20
                 }px] bg-white`}
@@ -202,6 +205,7 @@ export default function DrawingArea() {
                 viewportRef={viewportRef}
                 setUndoItems={setUndoItems}
                 gridGraphics={gridGraphics}
+                anglesCacheRef={anglesCacheRef}
             />
             <button
                 className="fixed right-10 bottom-5 z-10 bg-red-500 text-white py-2 px-4 disabled:bg-red-300 disabled:cursor-not-allowed"

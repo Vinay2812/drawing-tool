@@ -88,27 +88,6 @@ export function roundupNumber(num: number, precision = 1) {
     return Math.round(num * multiplyBy) / multiplyBy;
 }
 
-export function isTriangle(points: Point[]) {
-    if (points.length !== 6) {
-        return [];
-    }
-
-    let collidingPoints = 0;
-
-    for (let i = 0; i < points.length; i++) {
-        for (let j = 0; j < points.length; j++) {
-            if (i === j) continue;
-            const p1 = points[i];
-            const p2 = points[j];
-
-            const d = getDistance(p1, p2);
-            if (d === 0) collidingPoints++;
-            if (collidingPoints === 3) return true;
-        }
-    }
-    return false;
-}
-
 export function getClosestPoint(
     newPoint: Point,
     points: Point[],
@@ -271,32 +250,7 @@ export function getPointsFromLines(lines: Line[]) {
     );
 }
 
-export function getPointsAppearingOnce(points: Point[]): Point[] {
-    const pointCountMap: Record<string, number> = {};
-    // Count the occurrences of each point
-    for (const point of points) {
-        const key = `${point.x}-${point.y}`;
-        if (pointCountMap[key]) {
-            pointCountMap[key]++;
-        } else {
-            pointCountMap[key] = 1;
-        }
-    }
-
-    const result: Point[] = [];
-
-    // Collect points with count 1
-    for (const key in pointCountMap) {
-        if (pointCountMap[key] === 1) {
-            const [x, y] = key.split("-").map(Number);
-            result.push({ x, y });
-        }
-    }
-    return result;
-}
-
 export function isPointAppearingOnce(point: Point, allPoints: Point[]) {
-    // const points = getPointsAppearingOnce(allPoints);
     const pointCountMap: Record<string, number> = {};
 
     for (const p of allPoints) {
@@ -304,7 +258,6 @@ export function isPointAppearingOnce(point: Point, allPoints: Point[]) {
         if (!pointCountMap[key]) pointCountMap[key] = 0;
         pointCountMap[key] = pointCountMap[key] + 1;
     }
-    console.log(pointCountMap[JSON.stringify(point)]);
     return pointCountMap[JSON.stringify(point)] === 1;
 }
 
@@ -318,14 +271,13 @@ export function areSameLines(line1: Line, line2: Line) {
 }
 
 export function getLineFromLines(line: Line, lines: Line[]) {
-    return lines.find((line1, idx) => {
+    return lines.find((line1) => {
         const line2 = {
             end: line1.start,
             start: line1.end,
             shapeId: line1.shapeId,
         };
         const same = areSameLines(line1, line) || areSameLines(line2, line);
-        console.log(idx, line1, line2, line, same)
         return same;
     });
 }
@@ -337,26 +289,12 @@ export function getCommonPointsMap(lines: Line[]) {
         const { start, end } = line;
         const key1 = getPointKey(start);
         const key2 = getPointKey(end);
-        // const key1 = start;
-        // const key2 = end;
         const e1 = commonPointMap.get(key1) ?? [];
         commonPointMap.set(key1, [...e1, { x: end.x, y: end.y }]);
         const e2 = commonPointMap.get(key2) ?? [];
         commonPointMap.set(key2, [...e2, { x: start.x, y: start.y }]);
     }
     return commonPointMap;
-}
-
-export function getCenterPointOfPoints(points: Point[]) {
-    let x = 0,
-        y = 0;
-    const n = points.length;
-
-    for (const p of points) {
-        x += p.x;
-        y += p.y;
-    }
-    return { x: x / n, y: y / n };
 }
 
 export function getPointsSortedInClockwise(
@@ -447,7 +385,7 @@ export function getPointsSortedInClockwise(
 export function isPointerNearEdges(
     e: MouseEvent,
     container: HTMLElement,
-    edgeThreshold = GRID_UNIT
+    edgeThreshold = GRID_UNIT,
 ) {
     const { clientX: pointerX, clientY: pointerY } = e;
     const containerRect = container.getBoundingClientRect();
@@ -456,17 +394,14 @@ export function isPointerNearEdges(
     const isNearRight = containerRect.right - pointerX <= edgeThreshold;
     const isNearTop = pointerY - containerRect.top <= edgeThreshold;
     const isNearBottom = containerRect.bottom - pointerY <= edgeThreshold;
-
-    // return {
-    //     left: isNearLeft,
-    //     right: isNearRight,
-    //     top: isNearTop,
-    //     bottom: isNearBottom,
-    // };
     return isNearLeft || isNearBottom || isNearRight || isNearTop;
 }
 
-export function isPointerOutside(event: MouseEvent, container: HTMLElement, gap = 20) {
+export function isPointerOutside(
+    event: MouseEvent,
+    container: HTMLElement,
+    gap = 20,
+) {
     const containerRect = container.getBoundingClientRect();
     const pointerX = event.clientX;
     const pointerY = event.clientY;
