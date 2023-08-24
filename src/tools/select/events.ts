@@ -96,7 +96,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         pointNumberRef,
         shapes,
         container,
-        anglesCacheRef
     } = others;
     if (!startPoint || !isDrawing || !selectedPoint) {
         return;

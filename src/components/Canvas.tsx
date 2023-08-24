@@ -43,7 +43,6 @@ export type PointerEventsProps = {
     pencilPointsRef: React.MutableRefObject<Point[]>;
     viewport: Viewport;
     gridGraphics: SmoothGraphics;
-    anglesCacheRef: React.MutableRefObject<Record<string, Point[]>>;
 };
 
 type Props = {
@@ -58,7 +57,6 @@ type Props = {
     setUndoItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
     viewportRef: React.MutableRefObject<Viewport | null>;
     gridGraphics: SmoothGraphics;
-    anglesCacheRef: React.MutableRefObject<Record<string, Point[]>>;
 };
 
 export default function Canvas({
@@ -71,7 +69,6 @@ export default function Canvas({
     setUndoItems,
     viewportRef,
     gridGraphics,
-    anglesCacheRef,
 }: Props) {
     const containerRef = useRef<HTMLElement | null>(null);
     const startPoint = useRef<Point | null>(null);
@@ -120,7 +117,6 @@ export default function Canvas({
                 data[item.type].push(item.data);
                 return data;
             }, {} as Record<ToolsType, Shape[]>),
-            anglesCacheRef,
         };
     };
 
@@ -258,7 +254,6 @@ export default function Canvas({
             resolution: devicePixelRatio ?? 1,
         });
         container.appendChild(app.view);
-        // const {x, y, width, height} = container.getBoundingClientRect()
 
         const viewport = new Viewport({
             worldWidth: originalWidth,
@@ -361,11 +356,6 @@ export default function Canvas({
         viewport.removeEventListener("pointerdown", handleOnDown);
         viewport.removeEventListener("pointermove", handleOnMove);
         viewport.removeEventListener("pointerup", handleOnUp);
-        // viewport.removeEventListener("pointerout", handleOnUp);
-        // viewport.removeEventListener("pointerout", (e) =>
-        //     resetViewport(e, viewport, appRef.current!),
-        // );
-
         window.removeEventListener("resize", onResize);
     }
 

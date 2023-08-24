@@ -38,7 +38,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         shapes,
         viewport,
         container,
-        anglesCacheRef
     } = others;
     if (!startPoint || !isDrawing) return;
     // const lines = itemsRef.current.map((item) => item.data);
