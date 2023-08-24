@@ -19,7 +19,6 @@ export type ToolboxProps = {
     appRef: React.MutableRefObject<PIXI.Application<HTMLCanvasElement> | null>;
     viewportRef: React.MutableRefObject<Viewport | null>;
     hiddenTools: ToolsType[];
-    angleCacheRef: React.MutableRefObject<Record<string, Point[]>>
 };
 
 export default function Toolbox(
