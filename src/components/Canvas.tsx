@@ -266,7 +266,7 @@ export default function Canvas({
                 noDrag: true,
                 factor: 1,
                 percent: 1,
-                axis: "x",
+                axis: "all",
             })
             .wheel()
             .drag({
