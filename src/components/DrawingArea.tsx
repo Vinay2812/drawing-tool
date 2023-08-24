@@ -7,12 +7,7 @@ import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getShapesData } from "../utils/shapes";
 import { getDistance } from "../tools/utils/calculations";
 import { Viewport } from "pixi-viewport";
-import {
-    GRID_UNIT,
-    LINE_WIDTH,
-    initialTextGraphicsOptions,
-    isMobile,
-} from "../tools/utils/config";
+import { LINE_WIDTH, isMobile } from "../tools/utils/config";
 import { cn } from "../utils/helper";
 const Canvas = lazy(() => import("./Canvas"));
 
@@ -85,10 +80,10 @@ export interface CanvasConfig {
     unit: string;
 }
 
-export type DrawingAreaConfig = Omit<
-    Omit<CanvasConfig, "textGraphicsOptions">,
-    "lineWidth"
-> & {
+export type DrawingAreaConfig = {
+    gridSize: number;
+    showSubGrid: boolean;
+    unit: string;
     canvasWidth: number;
     canvasHeight: number;
     hiddenTools: ToolsType[];
@@ -108,10 +103,7 @@ export default function DrawingArea(props: DrawingAreaConfig) {
     const gridGraphics = useMemo(() => {
         return new SmoothGraphics();
     }, []);
-    // const [hiddenTools, setHiddenTools] = useState<ToolsType[]>(["circle"]);
-    // const [gridSize, setGridSize] = useState(GRID_UNIT);
     const lineWidth = useMemo(() => LINE_WIDTH, []);
-    // const [showSubGrid, setShowSubGrid] = useState(false);
     const textGraphicsOptions = useMemo<
         Partial<PIXI.ITextStyle> | PIXI.TextStyle
     >(
@@ -124,11 +116,6 @@ export default function DrawingArea(props: DrawingAreaConfig) {
         }),
         [props.gridSize, lineWidth],
     );
-    // const [unit, setUnit] = useState("cm");
-    // const [canvasWidth, setCanvasWidth] = useState(
-    //     Math.min(window.innerWidth, 800),
-    // );
-    // const [canvasHeight, setCanvasHeight] = useState(600);
 
     function handleSubmit() {
         const lines = drawingItems
