@@ -316,6 +316,7 @@ export function renderAngleBetweenLines(
             if (editable) {
                 graphicsStoreRef.current[labelKey] = [labelGraphics];
             }
+            viewport.addChild(labelGraphics);
             if (getFullAngleBetweenLines(line1, line2) > 180) {
                 continue;
             }
@@ -332,7 +333,6 @@ export function renderAngleBetweenLines(
             const angleKey = getAngleKey(line1, line2);
             viewport.addChild(graphics);
             viewport.addChild(angleTextGraphics);
-            viewport.addChild(labelGraphics);
             if (editable) {
                 graphicsStoreRef.current[angleKey] = [
                     graphics,
