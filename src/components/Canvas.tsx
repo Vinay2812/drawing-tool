@@ -1,6 +1,13 @@
 import * as PIXI from "pixi.js";
 import { ToolsType, tools } from "../tools";
-import { CanvasConfig, Circle, DrawingItem, Line, Pencil, Point } from "./DrawingArea";
+import {
+    CanvasConfig,
+    Circle,
+    DrawingItem,
+    Line,
+    Pencil,
+    Point,
+} from "./DrawingArea";
 import { useEffect, useRef } from "react";
 import { renderCanvasGrid } from "./renderGrid";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
@@ -64,7 +71,7 @@ type Props = {
     canvasWidth: number;
     canvasHeight: number;
     unit: string;
-    defaultDrawingItems: DrawingItem[]
+    defaultDrawingItems: DrawingItem[];
 };
 
 export default function Canvas({
@@ -84,7 +91,7 @@ export default function Canvas({
     canvasWidth,
     canvasHeight,
     unit,
-    defaultDrawingItems
+    defaultDrawingItems,
 }: Props) {
     const containerRef = useRef<HTMLElement | null>(null);
     const startPoint = useRef<Point | null>(null);
@@ -151,9 +158,8 @@ export default function Canvas({
             canvasConfig.gridSize,
         );
         let outsideContainer = isPointerOutside(e, containerRef.current!);
-        let timeSpent = 5;
 
-        while (touchingEdge && !outsideContainer && timeSpent < 100) {
+        while (touchingEdge && !outsideContainer) {
             const endPoint = getPointerPosition(
                 e,
                 containerRef.current!,
@@ -161,21 +167,20 @@ export default function Canvas({
             );
             const start = startPoint.current!;
             const line: Line = {
-                start: endPoint,
-                end: start,
+                start: start,
+                end: endPoint,
                 shapeId: -1,
             };
-
+            console.log(line);
             if (!start || !endPoint) {
                 break;
             }
 
-            const shift = findPointAtDistance(line, -10);
-            const distanceFactor =
-                (canvasConfig.gridSize * timeSpent) /
-                (viewportRef.current!.scale.x ?? 1);
-            const deltaX = (start.x - shift.x) / distanceFactor;
-            const deltaY = (start.y - shift.y) / distanceFactor;
+            const travelDistance = canvasConfig.gridSize * 0.01;
+
+            const shift = findPointAtDistance(line, travelDistance);
+            const deltaX = start.x - shift.x;
+            const deltaY = start.y - shift.y;
 
             const newCenter = {
                 x: viewportRef.current!.center.x - deltaX,
@@ -194,8 +199,6 @@ export default function Canvas({
 
             // Wait for a short delay
             await delay(100);
-
-            timeSpent++;
 
             // Update edge status
             touchingEdge = isPointerNearEdges(
@@ -247,7 +250,7 @@ export default function Canvas({
                 viewportRef.current!,
                 graphicsStoreRef,
                 canvasConfig,
-                editable
+                editable,
             );
         });
         renderAngleBetweenLines(
@@ -258,7 +261,7 @@ export default function Canvas({
             graphicsStoreRef,
             pointNumberRef,
             canvasConfig,
-            editable
+            editable,
         );
     }
     function handleViewPortZoom(
@@ -372,7 +375,7 @@ export default function Canvas({
         setTimeout(() => {
             if (!app || !containerRef.current) return;
             renderCanvasGrid(viewport, app, gridGraphics, canvasConfig);
-            renderDrawingItems(defaultDrawingItems, false)
+            renderDrawingItems(defaultDrawingItems, false);
         }, 100);
     }
 
