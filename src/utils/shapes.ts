@@ -160,7 +160,6 @@ export function getShapesData(lines: Line[], gridSize: number) {
                 start: uniquePoints[shape[(i + 1) % n]],
                 shapeId: i + 1,
             };
-            // console.log(line1, line2)
 
             data.lines.push({
                 start: line1.start,

@@ -5,6 +5,7 @@ import * as PIXI from "pixi.js";
 import { renderDistanceOnLine, renderLine } from "../line";
 import { Viewport } from "pixi-viewport";
 import { CanvasConfig } from "../../components/DrawingArea";
+import { getCircleKey } from "../utils/keys";
 
 export function renderCircle(
     start: Point,
@@ -35,7 +36,7 @@ export function renderCircleWithMeasurements(
     const textGraphics = new PIXI.Text("", config.textGraphicsOptions);
     textGraphics.resolution = 1 + viewport.scale.x;
     const { start, end } = circle;
-    const key = `circle-${JSON.stringify(start)}-${JSON.stringify(end)}`;
+    const key = getCircleKey(circle);
     if (!graphicsStoreRef.current[key]) {
         graphicsStoreRef.current[key] = [];
     } else {

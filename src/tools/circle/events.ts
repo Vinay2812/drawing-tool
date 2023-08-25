@@ -5,7 +5,6 @@ import {
     getPointerPosition,
     getPointsFromLines,
 } from "../utils/calculations";
-import { resetViewport } from "../utils/helpers";
 import { renderCircleWithMeasurements } from "./renderer";
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
@@ -25,18 +24,12 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         isDrawing,
         viewport,
         graphicsStoreRef,
-        textGraphics,
-        graphics,
         shapes,
         container,
-        app,
         canvasConfig
     } = others;
     if (!startPoint || !isDrawing) return;
-    resetViewport(e, viewport, app);
     const end = getPointerPosition(e, container, viewport);
-    graphics.clear();
-    textGraphics.text = "";
     const shapeId = (shapes["circle"] ?? []).length + 1;
     renderCircleWithMeasurements(
         { start: startPoint, end, shapeId },
@@ -44,8 +37,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         graphicsStoreRef,
         canvasConfig
     );
-    viewport.addChild(textGraphics);
-    viewport.addChild(graphics);
 }
 
 export function onUp(e: MouseEvent, others: PointerEventsProps) {
@@ -53,8 +44,6 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         startPoint,
         isDrawing,
         setIsDrawing,
-        textGraphics,
-        graphics,
         viewport,
         setStartPoint,
         setDrawingItems,
@@ -62,12 +51,8 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         container,
     } = others;
     if (!startPoint || !isDrawing) {
-        graphics.clear();
-        viewport.removeChild(textGraphics);
         return;
     }
-    graphics.clear();
-    textGraphics.text = "";
 
     const start = startPoint;
     const end = getPointerPosition(e, container, viewport);

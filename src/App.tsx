@@ -58,7 +58,7 @@ export default function App() {
         canvasHeight: 600,
         canvasWidth: Math.min(window.innerWidth, 800),
         gridSize: 50,
-        hiddenTools: ["circle"],
+        hiddenTools: [],
         unit: "mm",
         showSubGrid: false,
         // defaultDrawingItems: [...defaultTriangle],
