@@ -1,7 +1,7 @@
-import DrawingArea, {
-    DrawingAreaConfig,
+import DrawingTool, {
+    DrawingToolConfig,
     DrawingItem,
-} from "./components/DrawingArea";
+} from "./components/drawing-tool";
 import "./index.css";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -54,7 +54,7 @@ const defaultTriangle: DrawingItem[] = [
 ];
 
 export default function App() {
-    const props: DrawingAreaConfig = {
+    const props: DrawingToolConfig = {
         canvasHeight: 600,
         canvasWidth: Math.min(window.innerWidth, 800),
         gridSize: 50,
@@ -63,5 +63,5 @@ export default function App() {
         showSubGrid: false,
         // defaultDrawingItems: [...defaultTriangle],
     };
-    return <DrawingArea {...props} />;
+    return <DrawingTool {...props} />;
 }

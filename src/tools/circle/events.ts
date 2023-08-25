@@ -1,5 +1,5 @@
-import { PointerEventsProps } from "../../components/Canvas";
-import { Circle } from "../../components/DrawingArea";
+import { PointerEventsProps } from "../../components/canvas";
+import { Circle } from "../../components/drawing-tool";
 import {
     getClosestPoint,
     getPointerPosition,
@@ -8,12 +8,22 @@ import {
 import { renderCircleWithMeasurements } from "./renderer";
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
-    const { setStartPoint, setIsDrawing, shapes, viewport, container, canvasConfig } =
-        others;
+    const {
+        setStartPoint,
+        setIsDrawing,
+        shapes,
+        viewport,
+        container,
+        canvasConfig,
+    } = others;
     const start = getPointerPosition(e, container, viewport);
     const lines = shapes["circle"] ?? [];
     const points = getPointsFromLines(lines as Circle[]);
-    const closestPoint = getClosestPoint(start, points, canvasConfig.gridSize / 2);
+    const closestPoint = getClosestPoint(
+        start,
+        points,
+        canvasConfig.gridSize / 2,
+    );
     setStartPoint(closestPoint);
     setIsDrawing(true);
 }
@@ -26,7 +36,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         graphicsStoreRef,
         shapes,
         container,
-        canvasConfig
+        canvasConfig,
     } = others;
     if (!startPoint || !isDrawing) return;
     const end = getPointerPosition(e, container, viewport);
@@ -35,7 +45,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         { start: startPoint, end, shapeId },
         viewport,
         graphicsStoreRef,
-        canvasConfig
+        canvasConfig,
     );
 }
 

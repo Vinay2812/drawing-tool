@@ -1,5 +1,5 @@
-import { AngleData, LineData, ShapeType } from "./../components/DrawingArea";
-import { Line, Point } from "../components/DrawingArea";
+import { AngleData, LineData, ShapeType } from "../components/drawing-tool";
+import { Line, Point } from "../components/drawing-tool";
 import {
     getAngleBetweenLines,
     getDistance,
@@ -7,7 +7,7 @@ import {
     isSamePoint,
     roundupNumber,
 } from "../tools/utils/calculations";
-import { ShapeData } from "../components/DrawingArea";
+import { ShapeData } from "../components/drawing-tool";
 
 let visitedArr: boolean[] = [];
 let graph: number[][] = [];

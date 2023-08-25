@@ -3,7 +3,7 @@ import {
     DrawingItem,
     type Line,
     type Point,
-} from "../../components/DrawingArea";
+} from "../../components/drawing-tool";
 import {
     findParallelogramFourthPoint,
     findPointAtDistance,
@@ -16,6 +16,7 @@ import {
     getCommonPointsMap,
     getLineFromLines,
     getPointsSortedInClockwise,
+    getFullAngleBetweenLines,
 } from "../utils/calculations";
 import { isMobile } from "../utils/config";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
@@ -26,7 +27,7 @@ import {
     getPointFromPointKey,
 } from "../utils/keys";
 import { Viewport } from "pixi-viewport";
-import { CanvasConfig } from "../../components/DrawingArea";
+import { CanvasConfig } from "../../components/drawing-tool";
 
 export function renderPoint(
     graphics: SmoothGraphics,
@@ -57,13 +58,13 @@ export function renderDistanceOnLine(
     textGraphics: PIXI.Text,
     line: Line,
     config: CanvasConfig,
+    viewport: Viewport,
 ) {
     const { start, end } = line;
     const distance = getDistance(start, end);
     textGraphics.text = `${roundupNumber(distance / config.gridSize)} ${
         config.unit
     }`;
-    // const textWidth =
     let p1 = start;
     let p2 = end;
     let gap =
@@ -74,12 +75,11 @@ export function renderDistanceOnLine(
         p2 = start;
         gap /= 1.2;
     }
+    gap *= viewport.scale.x;
     const s = slope(p1, p2);
     const angle = Math.atan(s);
-    // const gap = 10;
     const p = getLabelPosition(p1, p2, gap);
     textGraphics.rotation = angle;
-    // renderPoint(graphics, p, 3, "blue");
     textGraphics.x = p.x;
     textGraphics.y = p.y;
 }
@@ -110,7 +110,12 @@ export function renderLineGraphics(
         graphicsStoreRef.current[key] = [lineGraphics, textGraphics];
     }
     renderLine(lineGraphics, { start, end, shapeId }, "red", config);
-    renderDistanceOnLine(textGraphics, { start, end, shapeId }, config);
+    renderDistanceOnLine(
+        textGraphics,
+        { start, end, shapeId },
+        config,
+        viewport,
+    );
     viewport.addChild(lineGraphics);
     viewport.addChild(textGraphics);
 }
@@ -209,13 +214,10 @@ export function renderAngleBetweenLines(
             continue;
         }
         const commonPoint = getPointFromPointKey(key);
-        // const commonPoint = key;
         const sortedPoints = getPointsSortedInClockwise(endPoints, commonPoint);
         const n = sortedPoints.length;
         let totalAngleSum = 0;
-        // let largestAngleKey = "";
-        // let largestAngle = 120;
-        for (let i = 1; i <= n; i++) {
+        for (let i = 0; i <= n - 1; i++) {
             if (i === n && totalAngleSum <= 180) continue;
             const endPoint1 = sortedPoints[(i - 1 + n) % n];
             const endPoint2 = sortedPoints[i % n];
@@ -274,6 +276,9 @@ export function renderAngleBetweenLines(
                 pointNumberRef.current = pointNumberRef.current + 1;
             }
 
+            if (getFullAngleBetweenLines(line1, line2) > 180) {
+                continue;
+            }
             renderAngleWithLabelGraphics(
                 line1,
                 line2,

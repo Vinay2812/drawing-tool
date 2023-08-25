@@ -1,7 +1,6 @@
 import { Viewport } from "pixi-viewport";
-import type { Point, Line } from "../../components/DrawingArea";
+import type { Point, Line } from "../../components/drawing-tool";
 import { getPointKey } from "./keys";
-// import * as PIXI from "pixi.js";
 
 export function isSamePoint(start: Point, end: Point) {
     return start.x === end.x && start.y === end.y;
@@ -64,6 +63,26 @@ export function getAngleBetweenLines(line1: Line, line2: Line) {
     // Calculate angle in radians
     const angleRadians = Math.acos(dotProduct / (magnitude1 * magnitude2));
     const angleDegrees = (angleRadians * 180) / Math.PI;
+
+    return angleDegrees;
+}
+
+export function getFullAngleBetweenLines(line1: Line, line2: Line) {
+    const dx1 = line1.end.x - line1.start.x;
+    const dy1 = line1.end.y - line1.start.y;
+    const dx2 = line2.end.x - line2.start.x;
+    const dy2 = line2.end.y - line2.start.y;
+
+    const angle1 = Math.atan2(dy1, dx1);
+    const angle2 = Math.atan2(dy2, dx2);
+
+    let angleDifference = angle2 - angle1;
+
+    if (angleDifference < 0) {
+        angleDifference += 2 * Math.PI;
+    }
+
+    const angleDegrees = (angleDifference * 180) / Math.PI;
 
     return angleDegrees;
 }
@@ -220,8 +239,6 @@ export function getPointerPosition(
     container: HTMLElement,
     viewport: Viewport,
 ) {
-    const pos = { x: 0, y: 0 };
-
     // Get the position and size of the container's view on the page
     const containerOffset = container.getBoundingClientRect();
     const containerScrollX = container.scrollLeft;
@@ -234,11 +251,7 @@ export function getPointerPosition(
     // Get the global position of the pointer within the viewport
     const globalPos = viewport.toWorld(pointerX, pointerY);
 
-    // Assign the global position to the pos object
-    pos.x = globalPos.x;
-    pos.y = globalPos.y;
-
-    return pos;
+    return globalPos;
 }
 
 export function getPointsFromLines(lines: Line[]) {
@@ -348,37 +361,6 @@ export function getPointsSortedInClockwise(
             : 1,
     );
     return points;
-    // const leftPoints: Point[] = [];
-    // const rightPoints: Point[] = [];
-    // const center = getCenterPointOfPoints(points)
-    // for (const point of points) {
-    //     if (point.x < commonPoint.x) {
-    //         leftPoints.push(point);
-    //     } else {
-    //         rightPoints.push(point);
-    //     }
-    // }
-    // leftPoints.sort((a, b) =>
-    //     angleSortComparator(
-    //         commonPoint,
-    //         { x: commonPoint.x + 1, y: commonPoint.y + 1 },
-    //         a,
-    //         b,
-    //     )
-    //         ? 1
-    //         : -1,
-    // );
-    // rightPoints.sort((a, b) =>
-    //     angleSortComparator(
-    //         commonPoint,
-    //         { x: commonPoint.x - 1, y: commonPoint.y + 1 },
-    //         a,
-    //         b,
-    //     )
-    //         ? -1
-    //         : 1,
-    // );
-    // return [...leftPoints, ...rightPoints];
 }
 
 export function isPointerNearEdges(

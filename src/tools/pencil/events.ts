@@ -1,5 +1,5 @@
-import { PointerEventsProps } from "../../components/Canvas";
-import { DrawingItem } from "../../components/DrawingArea";
+import { PointerEventsProps } from "../../components/canvas";
+import { DrawingItem } from "../../components/drawing-tool";
 import { getPointerPosition } from "../utils/calculations";
 import { renderPencilGraphics } from "./renderers";
 
@@ -15,7 +15,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         isDrawing,
         pencilPointsRef,
         shapes,
-        graphics,
         viewport,
         graphicsStoreRef,
     } = others;
@@ -23,7 +22,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     const point = getPointerPosition(e, container, viewport);
     pencilPointsRef.current.push(point);
     const shapeId = (shapes["pencil"]?.length ?? 0) + 1;
-    graphics.clear();
     renderPencilGraphics(
         {
             points: pencilPointsRef.current,
@@ -43,10 +41,8 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         setDrawingItems,
         isDrawing,
         viewport,
-        graphics,
     } = others;
     if (!isDrawing || !pencilPointsRef.current.length) {
-        graphics.clear();
         pencilPointsRef.current = [];
         return;
     }

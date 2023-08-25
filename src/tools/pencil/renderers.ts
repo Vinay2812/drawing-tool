@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { Pencil } from "../../components/DrawingArea";
+import { Pencil } from "../../components/drawing-tool";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getPencilKey } from "../utils/keys";
 import { LINE_WIDTH, isMobile } from "../utils/config";

@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { ToolsType, tools } from "../tools";
+import { ToolsType, tools } from "../../tools";
 import {
     CanvasConfig,
     Circle,
@@ -7,19 +7,20 @@ import {
     Line,
     Pencil,
     Point,
-} from "./DrawingArea";
+} from "../drawing-tool";
 import { useEffect, useRef } from "react";
 import { renderCanvasGrid } from "./renderGrid";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
-import { renderAngleBetweenLines } from "../tools/line";
+import { renderAngleBetweenLines } from "../../tools/line";
 import { Viewport } from "pixi-viewport";
 import {
     findPointAtDistance,
     getPointerPosition,
     isPointerNearEdges,
     isPointerOutside,
-} from "../tools/utils/calculations";
-import { delay } from "../tools/utils/helpers";
+} from "../../tools/utils/calculations";
+import { delay } from "../../tools/utils/helpers";
+import { createPixiSetup } from "./setup";
 
 export type Shape = Line | Circle | Pencil;
 
@@ -30,25 +31,15 @@ export type PointerEventsProps = {
     setIsDrawing: (val: boolean) => void;
     selectedPoint: Point | null;
     setSelectedPoint: (point: Point | null) => void;
-    drawingItems: DrawingItem[];
     setDrawingItems: React.Dispatch<React.SetStateAction<DrawingItem[]>>;
     shapes: Record<ToolsType, Shape[]>;
     container: HTMLElement;
-    app: PIXI.Application<HTMLCanvasElement>;
-    angleTextGraphics: PIXI.Text;
-    textGraphics: PIXI.Text;
-    graphics: SmoothGraphics;
     graphicsStoreRef: React.MutableRefObject<
         Record<string, (SmoothGraphics | PIXI.Text)[]>
     >;
     pointNumberRef: React.MutableRefObject<number>;
-    lastTouchRef: React.MutableRefObject<{
-        x: number;
-        y: number;
-    }>;
     pencilPointsRef: React.MutableRefObject<Point[]>;
     viewport: Viewport;
-    gridGraphics: SmoothGraphics;
     canvasConfig: CanvasConfig;
 };
 
@@ -101,14 +92,8 @@ export default function Canvas({
     const selectedPoint = useRef<Point | null>(null);
     const setSelectedPoint = (point: Point | null) =>
         (selectedPoint.current = point);
-    const graphics = new SmoothGraphics();
-    const textGraphics = new PIXI.Text("", textGraphicsOptions);
-    const angleTextGraphics = new PIXI.Text("", textGraphicsOptions);
     const itemsRef = useRef(drawingItems);
-    const lastTouchRef = useRef({ x: 0, y: 0 });
     const pencilPointsRef = useRef<Point[]>([]);
-    const originalWidth = 10000; // Initial width of the world
-    const originalHeight = 10000; // Initial height of the world
     const maxZoomPercent = 4;
     const minZoomPercent = 0.5;
     const canvasConfig = {
@@ -124,22 +109,15 @@ export default function Canvas({
             startPoint: startPoint.current,
             isDrawing: isDrawing.current,
             container: containerRef.current!,
-            app: appRef.current!,
             viewport: viewportRef.current!,
-            angleTextGraphics,
-            textGraphics,
-            graphics,
             graphicsStoreRef,
             selectedPoint: selectedPoint.current,
             setDrawingItems,
             setStartPoint,
             setSelectedPoint,
             setIsDrawing,
-            drawingItems,
             pointNumberRef,
-            lastTouchRef,
             pencilPointsRef,
-            gridGraphics,
             shapes: itemsRef.current.reduce((data, item) => {
                 if (!data[item.type]) {
                     data[item.type] = [];
@@ -171,7 +149,6 @@ export default function Canvas({
                 end: endPoint,
                 shapeId: -1,
             };
-            console.log(line);
             if (!start || !endPoint) {
                 break;
             }
@@ -237,10 +214,25 @@ export default function Canvas({
         return tools[activeTool].events.onUp(e, props);
     }
 
-    const onResize = () => {
-        appRef.current!.renderer.resize(window.innerWidth, window.innerHeight);
-        viewportRef.current!.resize(window.innerWidth, window.innerHeight);
-    };
+    function handleViewPortZoom(
+        gridGraphics: SmoothGraphics,
+        viewport: Viewport,
+        app: PIXI.Application<HTMLCanvasElement>,
+    ) {
+        isDrawing.current = false;
+        pencilPointsRef.current = [];
+        const restrictedZoomFactor = Math.min(
+            maxZoomPercent,
+            Math.max(minZoomPercent, viewport.scale.x),
+        );
+        viewport.setZoom(restrictedZoomFactor);
+        renderCanvasGrid(viewport, app, gridGraphics, canvasConfig);
+    }
+
+    function handleZoomButtonClick(scale: number) {
+        viewportRef.current!.setZoom(scale);
+        handleViewPortZoom(gridGraphics, viewportRef.current!, appRef.current!);
+    }
 
     function renderDrawingItems(drawingItems: DrawingItem[], editable = true) {
         drawingItems.forEach((item) => {
@@ -264,66 +256,38 @@ export default function Canvas({
             editable,
         );
     }
-    function handleViewPortZoom(
-        gridGraphics: SmoothGraphics,
-        viewport: Viewport,
-        app: PIXI.Application<HTMLCanvasElement>,
-    ) {
-        isDrawing.current = false;
-        pencilPointsRef.current = [];
-        const restrictedZoomFactor = Math.min(
-            maxZoomPercent,
-            Math.max(minZoomPercent, viewport.scale.x),
-        );
-        viewport.setZoom(restrictedZoomFactor);
-        renderCanvasGrid(viewport, app, gridGraphics, canvasConfig);
+
+    function addEventListeners() {
+        const viewport = viewportRef.current;
+        if (!viewport) return;
+        viewport.addEventListener("pointerdown", handleOnDown);
+        viewport.addEventListener("pointermove", handleOnMove);
+        viewport.addEventListener("pointerup", handleOnUp);
     }
 
-    function createSetup() {
-        const container =
-            document.querySelector<HTMLCanvasElement>("#canvas-container");
-        if (!container) {
-            throw Error("Container not found");
-        }
-        const zoomIn = container.querySelector<HTMLButtonElement>("#zoom-in")!;
-        const zoomOut =
-            container.querySelector<HTMLButtonElement>("#zoom-out")!;
+    function removeEventListeners() {
+        const viewport = viewportRef.current;
+        if (!viewport) return;
+        viewport.removeEventListener("pointerdown", handleOnDown);
+        viewport.removeEventListener("pointermove", handleOnMove);
+        viewport.removeEventListener("pointerup", handleOnUp);
+    }
 
-        const app = new PIXI.Application<HTMLCanvasElement>({
-            width: canvasWidth,
-            height: canvasHeight,
-            backgroundColor: "transparent", // Background color
-            backgroundAlpha: 0,
-            antialias: true,
-            autoDensity: true,
-            resolution: devicePixelRatio ?? 1,
-        });
-        container.appendChild(app.view);
+    function initializeSetup() {
+        createPixiSetup(
+            appRef,
+            viewportRef,
+            containerRef,
+            "#canvas-container",
+            canvasWidth,
+            canvasHeight,
+        );
+        const app = appRef.current!;
+        const viewport = viewportRef.current!;
+        const container = containerRef.current!;
 
-        const viewport = new Viewport({
-            worldWidth: originalWidth,
-            worldHeight: originalHeight,
-            screenWidth: canvasWidth,
-            screenHeight: canvasHeight,
-            events: app.renderer.events,
-        })
-            .pinch({
-                noDrag: true,
-                factor: 1,
-                percent: 1,
-                axis: "all",
-            })
-            .wheel()
-            .drag({
-                wheel: false,
-            });
-        // .decelerate();
-
-        app.renderer.render(app.stage);
-        app.ticker.start();
-
-        viewport.addChild(gridGraphics);
-        app.stage.addChild(viewport);
+        renderCanvasGrid(viewport, app, gridGraphics, canvasConfig);
+        renderDrawingItems(defaultDrawingItems, false);
 
         viewport.on("zoomed", () => {
             handleViewPortZoom(
@@ -342,41 +306,23 @@ export default function Canvas({
                 canvasConfig,
             );
         });
-
+        const zoomIn = container.querySelector<HTMLButtonElement>("#zoom-in")!;
+        const zoomOut =
+            container.querySelector<HTMLButtonElement>("#zoom-out")!;
         zoomIn.onclick = () => {
             const newScale = Math.min(
                 viewportRef.current!.scale.x * 1.2,
                 maxZoomPercent,
             );
-            viewportRef.current!.setZoom(newScale);
-            handleViewPortZoom(
-                gridGraphics,
-                viewportRef.current!,
-                appRef.current!,
-            );
+            handleZoomButtonClick(newScale);
         };
         zoomOut.onclick = () => {
             const newScale = Math.max(
                 viewportRef.current!.scale.x / 1.2,
                 minZoomPercent,
             );
-            viewportRef.current!.setZoom(newScale);
-            handleViewPortZoom(
-                gridGraphics,
-                viewportRef.current!,
-                appRef.current!,
-            );
+            handleZoomButtonClick(newScale);
         };
-
-        containerRef.current = container;
-        appRef.current = app;
-        viewportRef.current = viewport;
-
-        setTimeout(() => {
-            if (!app || !containerRef.current) return;
-            renderCanvasGrid(viewport, app, gridGraphics, canvasConfig);
-            renderDrawingItems(defaultDrawingItems, false);
-        }, 100);
     }
 
     useEffect(() => {
@@ -389,30 +335,9 @@ export default function Canvas({
         }
     }, [activeTool, viewportRef]);
 
-    function addEventListeners() {
-        const container = containerRef.current!;
-        if (!container || !appRef.current || !viewportRef.current) return;
-        const viewport = viewportRef.current;
-        viewport.addEventListener("pointerdown", handleOnDown);
-        viewport.addEventListener("pointermove", handleOnMove);
-        viewport.addEventListener("pointerup", handleOnUp);
-        // viewport.addEventListener("pointerout", handleOnUp);
-        window.addEventListener("resize", onResize);
-    }
-
-    function removeEventListeners() {
-        const container = containerRef.current!;
-        if (!container || !appRef.current || !viewportRef.current) return;
-        const viewport = viewportRef.current;
-        viewport.removeEventListener("pointerdown", handleOnDown);
-        viewport.removeEventListener("pointermove", handleOnMove);
-        viewport.removeEventListener("pointerup", handleOnUp);
-        window.removeEventListener("resize", onResize);
-    }
-
     useEffect(() => {
         if (!appRef.current) {
-            createSetup();
+            initializeSetup();
         }
         addEventListeners();
         return () => {
@@ -426,5 +351,5 @@ export default function Canvas({
         renderDrawingItems(drawingItems);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [drawingItems, activeTool]);
-    return <div></div>;
+    return <div />;
 }

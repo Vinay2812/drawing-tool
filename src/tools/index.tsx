@@ -5,8 +5,8 @@ import * as clearTool from "./clear";
 import * as undoTool from "./undo";
 import * as redoTool from "./redo";
 import * as pencilTool from "./pencil";
-import { ToolboxProps } from "../components/Toolbox";
-import { PointerEventsProps } from "../components/Canvas";
+import { ToolboxProps } from "../components/toolbox";
+import { PointerEventsProps } from "../components/canvas";
 export type OnClickArgs = ToolboxProps;
 
 export type PointerEvents = {
@@ -28,5 +28,5 @@ export const tools = {
 export type ToolsType = keyof typeof tools;
 
 type Unpacked<T> = T extends (infer U)[] ? U : T;
-const toolsValue = Object.values(tools)
-export type Tools = Record<ToolsType, Unpacked<typeof toolsValue>>
+const toolsValue = Object.values(tools);
+export type Tools = Record<ToolsType, Unpacked<typeof toolsValue>>;

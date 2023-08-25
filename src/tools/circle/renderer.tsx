@@ -1,10 +1,10 @@
 import { SmoothGraphics } from "@pixi/graphics-smooth";
 import { getDistance } from "../utils/calculations";
-import { Circle, Point } from "../../components/DrawingArea";
+import { Circle, Point } from "../../components/drawing-tool";
 import * as PIXI from "pixi.js";
 import { renderDistanceOnLine, renderLine } from "../line";
 import { Viewport } from "pixi-viewport";
-import { CanvasConfig } from "../../components/DrawingArea";
+import { CanvasConfig } from "../../components/drawing-tool";
 import { getCircleKey } from "../utils/keys";
 
 export function renderCircle(
@@ -49,7 +49,7 @@ export function renderCircleWithMeasurements(
     }
     renderCircle(start, end, circleGraphics, config);
     renderLine(circleGraphics, circle, "red", config);
-    renderDistanceOnLine(textGraphics, circle, config);
+    renderDistanceOnLine(textGraphics, circle, config, viewport);
     viewport.addChild(circleGraphics);
     viewport.addChild(textGraphics);
 }

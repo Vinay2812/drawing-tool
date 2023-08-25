@@ -11,8 +11,8 @@ import {
     renderNewLine,
     renderAngleBetweenLines,
 } from "./renderers";
-import { PointerEventsProps } from "../../components/Canvas";
-import { Line } from "../../components/DrawingArea";
+import { PointerEventsProps } from "../../components/canvas";
+import { Line } from "../../components/drawing-tool";
 
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
     const {
@@ -40,9 +40,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     const {
         startPoint,
         isDrawing,
-        angleTextGraphics,
-        textGraphics,
-        graphics,
         graphicsStoreRef,
         pointNumberRef,
         shapes,
@@ -51,13 +48,10 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         canvasConfig,
     } = others;
     if (!startPoint || !isDrawing) return;
-    // const lines = itemsRef.current.map((item) => item.data);
+
     const end = getPointerPosition(e, container, viewport);
     const start = startPoint;
     const lines = (shapes["line"] ?? []) as Line[];
-    graphics.clear();
-    textGraphics.text = "";
-    angleTextGraphics.text = "";
     const line: Line = { start, end, shapeId: lines.length + 1 };
     const lineExist = getLineFromLines(line, lines);
     if (lineExist) return;
@@ -69,8 +63,6 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         pointNumberRef,
         canvasConfig,
     );
-    viewport.addChild(textGraphics);
-    viewport.addChild(graphics);
 }
 
 export function onUp(e: MouseEvent, others: PointerEventsProps) {
@@ -78,9 +70,6 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         startPoint,
         isDrawing,
         setIsDrawing,
-        angleTextGraphics,
-        textGraphics,
-        graphics,
         setDrawingItems,
         setStartPoint,
         shapes,
@@ -89,14 +78,8 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         canvasConfig,
     } = others;
     if (!startPoint || !isDrawing) {
-        graphics.clear();
-        viewport.removeChild(textGraphics);
-        viewport.removeChild(angleTextGraphics);
         return;
     }
-    graphics.clear();
-    textGraphics.text = "";
-    angleTextGraphics.text = "";
 
     const start = startPoint;
     const end = getPointerPosition(e, container, viewport);

@@ -1,11 +1,11 @@
 import * as PIXI from "pixi.js";
-import { getMidpoint } from "../tools/utils/calculations";
+import { getMidpoint } from "../../tools/utils/calculations";
 import { SmoothGraphics } from "@pixi/graphics-smooth";
-import { renderPoint } from "../tools/line";
+import { renderPoint } from "../../tools/line";
 import { Viewport } from "pixi-viewport";
-import { Line } from "./DrawingArea";
-import { CanvasConfig } from "./DrawingArea";
-import { isMobile } from "../tools/utils/config";
+import { Line } from "../drawing-tool";
+import { CanvasConfig } from "../drawing-tool";
+import { isMobile } from "../../tools/utils/config";
 
 let textGraphics: PIXI.Text | null = null;
 // textGraphics.resolution = 8;
@@ -20,7 +20,10 @@ export function renderCanvasGrid(
     gridGraphics.clear();
     viewport.removeChild(gridGraphics);
     if (!textGraphics) {
-        textGraphics = new PIXI.Text(`1 ${config.unit}`, config.textGraphicsOptions);
+        textGraphics = new PIXI.Text(
+            `1 ${config.unit}`,
+            config.textGraphicsOptions,
+        );
     }
     const gridSize = config.gridSize;
     const gridColor = "black"; // Grid line color

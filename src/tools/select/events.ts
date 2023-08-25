@@ -1,5 +1,5 @@
-import { PointerEventsProps } from "./../../components/Canvas";
-import { type Line } from "../../components/DrawingArea";
+import { PointerEventsProps } from "../../components/canvas";
+import { type Line } from "../../components/drawing-tool";
 import {
     getClosestPoint,
     getPointerPosition,
@@ -11,7 +11,6 @@ import {
 } from "../utils/calculations";
 import { renderLineGraphics, renderAngleBetweenLines } from "../line/renderers";
 
-
 export function onDown(e: MouseEvent, others: PointerEventsProps) {
     const {
         viewport,
@@ -20,12 +19,16 @@ export function onDown(e: MouseEvent, others: PointerEventsProps) {
         setIsDrawing,
         setSelectedPoint,
         shapes,
-        canvasConfig
+        canvasConfig,
     } = others;
     const lines = (shapes["line"] ?? []) as Line[];
     const clickedPoint = getPointerPosition(e, container, viewport);
     const points = getPointsFromLines(lines);
-    const endPoint = getClosestPoint(clickedPoint, points, canvasConfig.gridSize / 2);
+    const endPoint = getClosestPoint(
+        clickedPoint,
+        points,
+        canvasConfig.gridSize / 2,
+    );
     const isSinglePoint = isPointAppearingOnce(endPoint, points);
     if (isSinglePoint) {
         viewport.plugins.pause("drag");
@@ -53,24 +56,18 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
         startPoint,
         isDrawing,
         viewport,
-        angleTextGraphics,
-        textGraphics,
-        graphics,
         selectedPoint,
         graphicsStoreRef,
         pointNumberRef,
         shapes,
         container,
-        canvasConfig
+        canvasConfig,
     } = others;
     if (!startPoint || !isDrawing || !selectedPoint) {
         return;
     }
     const end = getPointerPosition(e, container, viewport);
     const start = startPoint;
-    graphics.clear();
-    textGraphics.text = "";
-    angleTextGraphics.text = "";
     const lines = (shapes["line"] ?? []) as Line[];
     const selectedLine = {
         start: start,
@@ -80,12 +77,7 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
     const removingLine = getLineFromLines(selectedLine, lines);
     if (removingLine) {
         const newLine: Line = { start, end, shapeId: removingLine.shapeId };
-        renderLineGraphics(
-            newLine,
-            viewport,
-            graphicsStoreRef,
-            canvasConfig
-        );
+        renderLineGraphics(newLine, viewport, graphicsStoreRef, canvasConfig);
         const filteredLines = lines.filter(
             (line) => !areSameLines(line, removingLine),
         );
@@ -94,11 +86,8 @@ export function onMove(e: MouseEvent, others: PointerEventsProps) {
             viewport,
             graphicsStoreRef,
             pointNumberRef,
-            canvasConfig
+            canvasConfig,
         );
-
-        viewport.addChild(textGraphics);
-        viewport.addChild(graphics);
     }
 }
 
@@ -108,24 +97,18 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
         selectedPoint,
         isDrawing,
         setIsDrawing,
-        angleTextGraphics,
-        textGraphics,
-        graphics,
         setDrawingItems,
         viewport,
         graphicsStoreRef,
         setStartPoint,
         shapes,
         container,
-        canvasConfig
+        canvasConfig,
     } = others;
     if (!startPoint || !isDrawing || !selectedPoint) {
         return;
     }
     viewport.plugins.resume("drag");
-    graphics.clear();
-    textGraphics.text = "";
-    angleTextGraphics.text = "";
     const start = startPoint;
     const end = getPointerPosition(e, container, viewport);
     const selectedLine = {
@@ -140,7 +123,11 @@ export function onUp(e: MouseEvent, others: PointerEventsProps) {
             (line) => !areSameLines(line, removingLine),
         );
         const filteredPoints = getPointsFromLines(filteredLines);
-        const updatedEnd = getClosestPoint(end, filteredPoints, canvasConfig.gridSize / 2);
+        const updatedEnd = getClosestPoint(
+            end,
+            filteredPoints,
+            canvasConfig.gridSize / 2,
+        );
 
         const newLine: Line = {
             start,

@@ -1,4 +1,4 @@
-import { Circle, Line, Pencil, Point } from "../../components/DrawingArea";
+import { Circle, Line, Pencil, Point } from "../../components/drawing-tool";
 
 export function getAngleKey(line1: Line, line2: Line) {
     return `angle-${line1.shapeId}-${line2.shapeId}`;
