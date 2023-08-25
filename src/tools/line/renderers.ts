@@ -120,15 +120,52 @@ export function renderLineGraphics(
     viewport.addChild(textGraphics);
 }
 
-function renderAngleWithLabelGraphics(
+function renderLabelGraphics(
+    l1: Line,
+    l2: Line,
+    commonPoint: Point,
+    angleDegrees: number,
+    labelGraphics: PIXI.Text,
+    viewport: Viewport,
+    config: CanvasConfig,
+) {
+    const line1: Line = {
+        start: commonPoint,
+        end: isSamePoint(l1.start, commonPoint) ? l1.end : l1.start,
+        shapeId: l1.shapeId,
+    };
+    const line2: Line = {
+        start: commonPoint,
+        end: isSamePoint(l2.start, commonPoint) ? l2.end : l2.start,
+        shapeId: l2.shapeId,
+    };
+
+    const line1Length = getDistance(line1.start, line1.end);
+    const line2Length = getDistance(line2.start, line2.end);
+
+    const minLength = Math.min(line1Length, line2Length);
+    const gap = Math.min(minLength, config.gridSize) * (isMobile() ? 0.4 : 0.6);
+
+    const arcStartPoint = findPointAtDistance(line1, gap);
+    const arcEndPoint = findPointAtDistance(line2, gap);
+
+    const labelPoint = findParallelogramFourthPoint(
+        [commonPoint, arcStartPoint, arcEndPoint],
+        0,
+        -1,
+    )!;
+    labelGraphics.x = labelPoint.x;
+    labelGraphics.y = labelPoint.y;
+    labelGraphics.resolution = 1 + viewport.scale.x;
+}
+
+function renderAngleGraphics(
     l1: Line,
     l2: Line,
     commonPoint: Point,
     angleDegrees: number,
     graphics: SmoothGraphics,
     angleTextGraphics: PIXI.Text,
-    labelGraphics: PIXI.Text,
-    viewport: Viewport,
     config: CanvasConfig,
 ) {
     const line1: Line = {
@@ -179,15 +216,6 @@ function renderAngleWithLabelGraphics(
     angleTextGraphics.x = angleFourthPoint.x - 10;
     angleTextGraphics.y = angleFourthPoint.y - 10;
     angleTextGraphics.text = `${roundupNumber(angleDegrees, 0)}°`;
-
-    const labelPoint = findParallelogramFourthPoint(
-        [commonPoint, arcStartPoint, arcEndPoint],
-        0,
-        -1,
-    )!;
-    labelGraphics.x = labelPoint.x;
-    labelGraphics.y = labelPoint.y;
-    labelGraphics.resolution = 1 + viewport.scale.x;
 }
 
 export function renderAngleBetweenLines(
@@ -276,18 +304,28 @@ export function renderAngleBetweenLines(
                 pointNumberRef.current = pointNumberRef.current + 1;
             }
 
+            renderLabelGraphics(
+                line1,
+                line2,
+                commonPoint,
+                angleDegrees,
+                labelGraphics,
+                viewport,
+                config,
+            );
+            if (editable) {
+                graphicsStoreRef.current[labelKey] = [labelGraphics];
+            }
             if (getFullAngleBetweenLines(line1, line2) > 180) {
                 continue;
             }
-            renderAngleWithLabelGraphics(
+            renderAngleGraphics(
                 line1,
                 line2,
                 commonPoint,
                 angleDegrees,
                 graphics,
                 angleTextGraphics,
-                labelGraphics,
-                viewport,
                 config,
             );
 
@@ -300,7 +338,6 @@ export function renderAngleBetweenLines(
                     graphics,
                     angleTextGraphics,
                 ];
-                graphicsStoreRef.current[labelKey] = [labelGraphics];
             }
         }
     }
